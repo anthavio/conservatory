@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration debug="true" scan="true" scanPeriod="10 seconds">
-<!--
+
 	<contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>
--->
+
 	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
 
 		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
@@ -29,7 +29,7 @@
 	</logger>
 	
 	<logger name="org.apache.http.wire">
-		<level value="debug" />
+		<level value="info" />
 	</logger>
 
 	<logger name="org.springframework">
@@ -49,7 +49,7 @@
 	</logger>
 	
 	<logger name="org.springframework.web">
-		<level value="trace" />
+		<level value="info" />
 	</logger>
 
 	<logger name="org.hibernate">

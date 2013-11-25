@@ -21,7 +21,12 @@ import com.vaadin.ui.UI;
 @Scope("prototype")
 //@Theme("myTheme")
 public class ConservVaadinUI extends UI implements ErrorHandler {
-
+	/*
+	static {
+		SLF4JBridgeHandler.removeHandlersForRootLogger();
+		SLF4JBridgeHandler.install();
+	}
+	*/
 	private static final long serialVersionUID = 1L;
 
 	@Autowired
