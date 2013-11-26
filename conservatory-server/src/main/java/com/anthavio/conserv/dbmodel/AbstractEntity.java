@@ -7,6 +7,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.TableGenerator;
 
 /**
  * @author martin.vanek
@@ -16,11 +17,12 @@ import javax.persistence.MappedSuperclass;
 public abstract class AbstractEntity {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "JPA_SEQ_GEN")
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "JPA_ID_GEN")
+	@TableGenerator(name = "JPA_ID_GEN", initialValue = 100, allocationSize = 50, table = "SEQUENCES", pkColumnName = "SEQ_NAME", valueColumnName = "SEQ_VALUE")
 	@Column(name = "ID")
 	private Long id;
 
-	@Column(name = "NAME", nullable = false, unique = true)
+	@Column(name = "NAME", nullable = false)
 	private String name;
 
 	@Column(name = "CREATED_AT", nullable = false, updatable = false)

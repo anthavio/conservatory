@@ -10,8 +10,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
@@ -23,12 +23,14 @@ import javax.persistence.TemporalType;
  */
 @Entity
 @Table(name = "CONFIG_DOWNLOAD")
-@SequenceGenerator(name = "JPA_SEQ_GEN", sequenceName = "CONFIG_DOWNLOAD_SEQ", allocationSize = 10)
+//@SequenceGenerator(name = "JPA_ID_GEN", sequenceName = "CONFIG_DOWNLOAD_SEQ", initialValue = 100, allocationSize = 10)
 public class ConfigDownload {
 
 	@Id
 	@Column(name = "ID")
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "JPA_SEQ_GEN")
+	//@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "JPA_SEQ_GEN")
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "JPA_ID_GEN")
+	@TableGenerator(name = "JPA_ID_GEN", initialValue = 100, allocationSize = 50, table = "SEQUENCES", pkColumnName = "SEQ_NAME", valueColumnName = "SEQ_VALUE")
 	private Long id;
 
 	@Column(name = "HOSTNAME", nullable = false, updatable = false)

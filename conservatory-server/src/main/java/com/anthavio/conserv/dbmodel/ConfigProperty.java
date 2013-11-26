@@ -5,7 +5,6 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import com.anthavio.conserv.model.Property.ValueType;
@@ -17,7 +16,7 @@ import com.anthavio.conserv.model.Property.ValueType;
  */
 @Entity
 @Table(name = "CONFIG_PROPERTY")
-@SequenceGenerator(name = "JPA_SEQ_GEN", sequenceName = "CONFIG_PROPERTY_SEQ", allocationSize = 10)
+//@SequenceGenerator(name = "JPA_ID_GEN", sequenceName = "CONFIG_PROPERTY_SEQ", initialValue = 100, allocationSize = 10)
 public class ConfigProperty extends AbstractEntity {
 
 	/*
@@ -36,9 +35,9 @@ public class ConfigProperty extends AbstractEntity {
 	@JoinColumn(name = "ID_CONFIG_TARGET", insertable = false, updatable = false)
 	private ConfigTarget configTarget;
 
-	@Column(name = "TYPE", nullable = false, updatable = false)
+	@Column(name = "PROP_TYPE", nullable = false, updatable = false)
 	private ValueType type;
 
-	@Column(name = "VALUE", nullable = false, updatable = false)
+	@Column(name = "PROP_VALUE", nullable = false, updatable = false)
 	private String value;
 }

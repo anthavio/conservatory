@@ -6,7 +6,6 @@ import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
-import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 /**
@@ -16,7 +15,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "APPLICATION")
-@SequenceGenerator(name = "JPA_SEQ_GEN", sequenceName = "APPLICATION_SEQ", allocationSize = 10)
+//@SequenceGenerator(name = "JPA_ID_GEN", sequenceName = "APPLICATION_SEQ", initialValue = 100, allocationSize = 10)
 public class Application extends AbstractEntity {
 
 	@OneToMany(mappedBy = "application")

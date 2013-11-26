@@ -11,7 +11,6 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
-import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 /**
@@ -24,7 +23,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "CONFIG_TARGET")
-@SequenceGenerator(name = "JPA_SEQ_GEN", sequenceName = "CONFIG_TARGET_SEQ", allocationSize = 10)
+//@SequenceGenerator(name = "JPA_ID_GEN", sequenceName = "CONFIG_TARGET_SEQ", initialValue = 100, allocationSize = 10)
 public class ConfigTarget extends AbstractEntity {
 
 	@Column(name = "ID_CONFIG_RESOURCE", nullable = false)

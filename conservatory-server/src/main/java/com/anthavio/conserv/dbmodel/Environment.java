@@ -6,7 +6,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
-import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 /**
@@ -17,7 +16,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "ENVIRONMENT")
-@SequenceGenerator(name = "JPA_SEQ_GEN", sequenceName = "ENVIRONMENT_SEQ", allocationSize = 10)
+//@SequenceGenerator(name = "JPA_ID_GEN", sequenceName = "ENVIRONMENT_SEQ", initialValue = 100, allocationSize = 10)
 public class Environment extends AbstractEntity {
 
 	@Column(name = "STATUS", nullable = false)
