@@ -12,4 +12,6 @@ import org.springframework.data.querydsl.QueryDslPredicateExecutor;
  */
 public interface EnvironmentDao extends JpaRepository<Environment, Long>, QueryDslPredicateExecutor<Environment> {
 
+	public Application findByName(String name);
+
 }

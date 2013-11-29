@@ -2,18 +2,21 @@ package com.anthavio.conserv.dbmodel;
 
 import java.util.Date;
 
+import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.TableGenerator;
+import javax.validation.constraints.Size;
 
 /**
  * @author martin.vanek
  *
  */
 @MappedSuperclass
+@Cacheable
 public abstract class AbstractEntity {
 
 	@Id
@@ -22,6 +25,7 @@ public abstract class AbstractEntity {
 	@Column(name = "ID")
 	private Long id;
 
+	@Size(min = 3, max = 60)
 	@Column(name = "NAME", nullable = false)
 	private String name;
 
@@ -67,6 +71,23 @@ public abstract class AbstractEntity {
 
 	public void setComment(String comment) {
 		this.comment = comment;
+	}
+
+	public static boolean isAlphanumeric(String string) {
+		if (string == null || string.length() == 0) {
+			return false;
+		}
+		for (int i = 0; i < string.length(); ++i) {
+			if (!Character.isLetterOrDigit(string.charAt(i))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "[id=" + id + ", name=" + name + ", createdAt=" + createdAt + "]";
 	}
 
 }

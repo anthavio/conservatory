@@ -42,13 +42,11 @@
 		<dependency>
 			<groupId>com.anthavio</groupId>
 			<artifactId>anthavio-spring</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>com.anthavio</groupId>
 			<artifactId>anthavio-aspects</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		
 		<!-- web-ui -->
@@ -169,6 +167,12 @@
 		</dependency>
 		
 		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-ehcache</artifactId>
+			<version>4.2.7.SP1</version>
+		</dependency>
+		
+		<dependency>
 			<groupId>com.mysema.querydsl</groupId>
 			<artifactId>querydsl-jpa</artifactId>
 			<version>3.2.4</version>
@@ -176,6 +180,11 @@
 				<exclusion>
 					<groupId>org.hibernate.javax.persistence</groupId>
 					<artifactId>hibernate-jpa-2.0-api</artifactId>
+				</exclusion>
+				<exclusion>
+					 <!--javax.annotation package clashes with jetty jsr250 javax.annotation which is certificate signed-->
+					<groupId>com.google.code.findbugs</groupId>
+					<artifactId>jsr305</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -407,7 +416,7 @@
 									<pluginExecutionFilter>
 										<groupId>com.vaadin</groupId>
 										<artifactId>vaadin-maven-plugin</artifactId>
-										<versionRange>[7.0.4,)</versionRange>
+										<versionRange>[0.0.1,)</versionRange>
 										<goals>
 											<goal>resources</goal>
 											<goal>update-widgetset</goal>

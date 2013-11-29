@@ -35,8 +35,13 @@ public class ConfigResource extends AbstractEntity {
 	@OrderBy("CREATED_AT")
 	private List<ConfigTarget> configTargets;
 
+	ConfigResource() {
+		//JPA
+	}
+
 	public ConfigResource(String name, Application application) {
 		super(name);
+		this.type = "properties";
 		this.idApplication = application.getId();
 	}
 }

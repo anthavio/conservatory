@@ -27,14 +27,14 @@ import javax.persistence.Table;
 public class ConfigTarget extends AbstractEntity {
 
 	@Column(name = "ID_CONFIG_RESOURCE", nullable = false)
-	private Integer idConfigResource;
+	private Long idConfigResource;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_CONFIG_RESOURCE", referencedColumnName = "ID", insertable = false, updatable = false)
 	private ConfigResource configResource;
 
 	@Column(name = "ID_ENVIRONMENT", nullable = false)
-	private Integer idEnvironment;
+	private Long idEnvironment;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_ENVIRONMENT", referencedColumnName = "ID", insertable = false, updatable = false)
@@ -57,9 +57,9 @@ public class ConfigTarget extends AbstractEntity {
 		//JPA
 	}
 
-	public ConfigTarget(int idConfigResource, int idEnvironment, String name) {
+	public ConfigTarget(ConfigResource configResource, Environment environment, String name) {
 		super(name);
-		this.idConfigResource = idConfigResource;
-		this.idEnvironment = idEnvironment;
+		this.idConfigResource = configResource.getId();
+		this.idEnvironment = environment.getId();
 	}
 }

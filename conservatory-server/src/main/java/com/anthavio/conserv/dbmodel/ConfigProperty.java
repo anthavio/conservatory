@@ -1,5 +1,10 @@
 package com.anthavio.conserv.dbmodel;
 
+import java.net.URI;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -7,6 +12,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.apache.commons.codec.binary.Base64;
+
+import com.anthavio.conserv.model.Property;
 import com.anthavio.conserv.model.Property.ValueType;
 
 /**
@@ -29,7 +37,7 @@ public class ConfigProperty extends AbstractEntity {
 	*/
 
 	@Column(name = "ID_CONFIG_TARGET", nullable = false, updatable = false)
-	private Integer idConfigTarget;
+	private Long idConfigTarget;
 
 	@ManyToOne(optional = false, fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_CONFIG_TARGET", insertable = false, updatable = false)
@@ -40,4 +48,42 @@ public class ConfigProperty extends AbstractEntity {
 
 	@Column(name = "PROP_VALUE", nullable = false, updatable = false)
 	private String value;
+
+	ConfigProperty() {
+		//JPA
+	}
+
+	public ConfigProperty(ConfigTarget configTarget, String name, String string) {
+		this(configTarget, name, ValueType.STRING, string, null);
+	}
+
+	public ConfigProperty(ConfigTarget configTarget, String name, Integer integer) {
+		this(configTarget, name, ValueType.INTEGER, integer != null ? String.valueOf(integer) : null, null);
+	}
+
+	public ConfigProperty(ConfigTarget configTarget, String name, Date date) {
+		this(configTarget, name, ValueType.DATETIME, date != null ? new SimpleDateFormat(Property.DATE_FORMAT).format(date)
+				: null, null);
+	}
+
+	public ConfigProperty(ConfigTarget configTarget, String name, URL url) {
+		this(configTarget, name, ValueType.URL, url != null ? String.valueOf(url) : null, null);
+	}
+
+	public ConfigProperty(ConfigTarget configTarget, String name, URI uri) {
+		this(configTarget, name, ValueType.URL, uri != null ? String.valueOf(uri) : null, null);
+	}
+
+	public ConfigProperty(ConfigTarget configTarget, String name, byte[] binary) {
+		this(configTarget, name, ValueType.BINARY, binary != null ? new String(Base64.encodeBase64(binary, false)) : null,
+				null);
+	}
+
+	public ConfigProperty(ConfigTarget configTarget, String name, ValueType type, String value, String comment) {
+		super(name);
+		this.idConfigTarget = configTarget.getId();
+		this.type = type;
+		this.value = value;
+		this.comment = comment;
+	}
 }
