@@ -42,7 +42,7 @@ public class ConservClient {
 		this(url, null, null);
 	}
 
-	public Configuration getConfiguration(String application, String environment) throws IOException {
+	public Configuration getConfiguration(String environment, String application, String resource) throws IOException {
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 		connection.setConnectTimeout(1000);
 		connection.setReadTimeout(3000);

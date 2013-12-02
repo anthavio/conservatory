@@ -7,6 +7,7 @@ import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
 /**
@@ -20,12 +21,17 @@ import javax.validation.constraints.Size;
 //@SequenceGenerator(name = "JPA_ID_GEN", sequenceName = "ENVIRONMENT_SEQ", initialValue = 100, allocationSize = 10)
 public class Environment extends AbstractEntity {
 
+	public static enum EnvironmentState {
+		PUBLIC, PRIVATE, DELETED;
+	}
+
 	@Size(min = 3, max = 20)
-	@Column(name = "SHORT_NAME", nullable = true)
-	private String shortName;
+	@Pattern(regexp = "[a-z0-9]+")
+	@Column(name = "CODE_NAME", unique = true, nullable = false)
+	private String codeName;
 
 	@Column(name = "STATUS", nullable = false)
-	private Integer status; //global, private, deleted
+	private EnvironmentState state; //global, private, deleted
 
 	@OneToMany(mappedBy = "environment")
 	@OrderBy("CREATED_AT")
@@ -35,17 +41,18 @@ public class Environment extends AbstractEntity {
 		//JPA
 	}
 
-	public Environment(String name, String shortName, boolean global) {
+	public Environment(String name, String codeName, boolean global) {
 		super(name);
-		this.status = global ? 1 : 2;
+		this.state = global ? EnvironmentState.PUBLIC : EnvironmentState.PRIVATE;
+		this.codeName = codeName.toLowerCase();
 	}
 
-	public Integer getStatus() {
-		return status;
+	public EnvironmentState getState() {
+		return state;
 	}
 
-	public void setStatus(Integer status) {
-		this.status = status;
+	public void setStatus(EnvironmentState state) {
+		this.state = state;
 	}
 
 }

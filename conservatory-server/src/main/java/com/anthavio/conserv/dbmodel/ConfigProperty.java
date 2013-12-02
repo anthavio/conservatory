@@ -7,10 +7,8 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -35,14 +33,16 @@ public class ConfigProperty extends AbstractEntity {
 	@JoinColumn(name = "ID_CONFIG_VERSION", insertable = false, updatable = false)
 	private ConfigVersion configVersion;
 	*/
-
+	/*
+	@NotNull
 	@Column(name = "ID_CONFIG_TARGET", nullable = false, updatable = false)
 	private Long idConfigTarget;
 
 	@ManyToOne(optional = false, fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_CONFIG_TARGET", insertable = false, updatable = false)
 	private ConfigTarget configTarget;
-
+	*/
+	@NotNull
 	@Column(name = "PROP_TYPE", nullable = false, updatable = false)
 	private ValueType type;
 
@@ -81,9 +81,44 @@ public class ConfigProperty extends AbstractEntity {
 
 	public ConfigProperty(ConfigTarget configTarget, String name, ValueType type, String value, String comment) {
 		super(name);
-		this.idConfigTarget = configTarget.getId();
+		//this.idConfigTarget = configTarget.getId();
+		//this.configTarget = configTarget;
+		//this.configTarget.getProperties().add(this);
+		configTarget.getProperties().add(this);
+		if (type == null) {
+			throw new IllegalArgumentException("Config value type must not be null");
+		}
 		this.type = type;
+		//value can be null
 		this.value = value;
+		//comment can be null
 		this.comment = comment;
+
 	}
+
+	public ValueType getType() {
+		return type;
+	}
+
+	public void setType(ValueType type) {
+		this.type = type;
+	}
+
+	public String getValue() {
+		return value;
+	}
+
+	public void setValue(String value) {
+		this.value = value;
+	}
+	/*
+		public Long getIdConfigTarget() {
+			return idConfigTarget;
+		}
+
+		public ConfigTarget getConfigTarget() {
+			return configTarget;
+		}
+	*/
+
 }

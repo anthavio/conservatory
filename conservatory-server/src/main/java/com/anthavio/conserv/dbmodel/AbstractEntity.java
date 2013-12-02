@@ -87,7 +87,7 @@ public abstract class AbstractEntity {
 
 	@Override
 	public String toString() {
-		return "[id=" + id + ", name=" + name + ", createdAt=" + createdAt + "]";
+		return getClass().getSimpleName() + " [id=" + id + ", name=" + name + ", createdAt=" + createdAt + "]";
 	}
 
 }

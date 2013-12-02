@@ -13,4 +13,6 @@ import org.springframework.data.querydsl.QueryDslPredicateExecutor;
 public interface ApplicationDao extends JpaRepository<Application, Long>, QueryDslPredicateExecutor<Application> {
 
 	public Application findByName(String name);
+
+	public Application findByCodeName(String name);
 }

@@ -21,7 +21,7 @@ public class Property implements Serializable {
 
 	public static enum ValueType {
 
-		STRING, INTEGER, FLOAT, DATETIME, URL, BINARY;
+		STRING, INTEGER, PASSWORD, FLOAT, DATETIME, URL, BINARY;
 	}
 
 	private static final long serialVersionUID = 1L;
@@ -74,8 +74,9 @@ public class Property implements Serializable {
 		}
 		this.type = type;
 
-		//value and comment may be null 
+		//value can be null 
 		this.value = value;
+		//comment can be null
 		this.comment = comment;
 	}
 

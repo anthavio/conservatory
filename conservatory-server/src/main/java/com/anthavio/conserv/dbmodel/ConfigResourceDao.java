@@ -13,5 +13,7 @@ import org.springframework.data.querydsl.QueryDslPredicateExecutor;
 public interface ConfigResourceDao extends JpaRepository<ConfigResource, Long>,
 		QueryDslPredicateExecutor<ConfigResource> {
 
-	public Application findByName(String name);
+	public ConfigResource findByName(String name);
+
+	public ConfigResource findByCodeName(String name);
 }

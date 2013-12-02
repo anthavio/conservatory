@@ -10,7 +10,9 @@ import org.h2.server.TcpServer;
 import org.h2.tools.Server;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
@@ -34,11 +36,23 @@ import com.jolbox.bonecp.BoneCPDataSource;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackageClasses = Application.class/*, repositoryFactoryBeanClass = AbstractDaoFactoryBean.class*/)
+@ComponentScan(basePackageClasses = ConservService.class, excludeFilters = @ComponentScan.Filter(value = Configuration.class, type = FilterType.ANNOTATION))
 public class ServicesSpringConfig {
 
 	@Autowired
 	private Environment environment;
 
+	/*
+		@PostConstruct
+		public void start() {
+			h2Server().start();
+		}
+		
+		@PreDestroy
+		public void stop() {
+			h2Server().stop();
+		}
+	*/
 	@Bean
 	public DataSource dataSource() {
 
@@ -86,7 +100,7 @@ public class ServicesSpringConfig {
 		return dataSource;
 	}
 
-	@Bean(initMethod = "start", destroyMethod = "shutdown")
+	@Bean(initMethod = "start", destroyMethod = "stop")
 	public Server h2Server() {
 		String tcpPort = "9002";
 		String baseDir = "h2db";
@@ -122,6 +136,11 @@ public class ServicesSpringConfig {
 		jpaProperties.setProperty("hibernate.cache.use_structured_entries", "true");
 		jpaProperties.setProperty("net.sf.ehcache.configurationResourceName", "ehcache.xml");
 		*/
+		/**
+			javax.persistence.validation.group.pre-persist
+			javax.persistence.validation.group.pre-update
+			javax.persistence.validation.group.pre-remove
+		 */
 		factory.setJpaProperties(jpaProperties);
 		factory.afterPropertiesSet();
 

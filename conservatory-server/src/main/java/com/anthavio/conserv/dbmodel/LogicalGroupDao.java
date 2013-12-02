@@ -10,10 +10,8 @@ import org.springframework.data.querydsl.QueryDslPredicateExecutor;
  * @author martin.vanek
  *
  */
-public interface EnvironmentDao extends JpaRepository<Environment, Long>, QueryDslPredicateExecutor<Environment> {
+public interface LogicalGroupDao extends JpaRepository<LogicalGroup, Long>, QueryDslPredicateExecutor<LogicalGroup> {
 
-	public Environment findByName(String name);
-
-	public Environment findByCodeName(String name);
+	public Application findByName(String name);
 
 }
