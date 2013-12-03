@@ -10,8 +10,6 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.codec.binary.Base64;
-
 import com.anthavio.conserv.model.Property;
 import com.anthavio.conserv.model.Property.ValueType;
 
@@ -53,38 +51,30 @@ public class ConfigProperty extends AbstractEntity {
 		//JPA
 	}
 
-	public ConfigProperty(ConfigTarget configTarget, String name, String string) {
+	public ConfigProperty(ConfigDeploy configTarget, String name, String string) {
 		this(configTarget, name, ValueType.STRING, string, null);
 	}
 
-	public ConfigProperty(ConfigTarget configTarget, String name, Integer integer) {
+	public ConfigProperty(ConfigDeploy configTarget, String name, Integer integer) {
 		this(configTarget, name, ValueType.INTEGER, integer != null ? String.valueOf(integer) : null, null);
 	}
 
-	public ConfigProperty(ConfigTarget configTarget, String name, Date date) {
-		this(configTarget, name, ValueType.DATETIME, date != null ? new SimpleDateFormat(Property.DATE_FORMAT).format(date)
+	public ConfigProperty(ConfigDeploy configTarget, String name, Date date) {
+		this(configTarget, name, ValueType.DATE_TIME, date != null ? new SimpleDateFormat(Property.DATE_TIME_FORMAT).format(date)
 				: null, null);
 	}
 
-	public ConfigProperty(ConfigTarget configTarget, String name, URL url) {
+	public ConfigProperty(ConfigDeploy configTarget, String name, URL url) {
 		this(configTarget, name, ValueType.URL, url != null ? String.valueOf(url) : null, null);
 	}
 
-	public ConfigProperty(ConfigTarget configTarget, String name, URI uri) {
+	public ConfigProperty(ConfigDeploy configTarget, String name, URI uri) {
 		this(configTarget, name, ValueType.URL, uri != null ? String.valueOf(uri) : null, null);
 	}
 
-	public ConfigProperty(ConfigTarget configTarget, String name, byte[] binary) {
-		this(configTarget, name, ValueType.BINARY, binary != null ? new String(Base64.encodeBase64(binary, false)) : null,
-				null);
-	}
-
-	public ConfigProperty(ConfigTarget configTarget, String name, ValueType type, String value, String comment) {
+	public ConfigProperty(ConfigDeploy configTarget, String name, ValueType type, String value, String comment) {
 		super(name);
-		//this.idConfigTarget = configTarget.getId();
-		//this.configTarget = configTarget;
-		//this.configTarget.getProperties().add(this);
-		configTarget.getProperties().add(this);
+		//configTarget.getProperties().add(this);
 		if (type == null) {
 			throw new IllegalArgumentException("Config value type must not be null");
 		}

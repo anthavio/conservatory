@@ -35,7 +35,7 @@ public class Environment extends AbstractEntity {
 
 	@OneToMany(mappedBy = "environment")
 	@OrderBy("CREATED_AT")
-	private List<ConfigTarget> configTargets;
+	private List<ConfigDeploy> configDeploys;
 
 	Environment() {
 		//JPA

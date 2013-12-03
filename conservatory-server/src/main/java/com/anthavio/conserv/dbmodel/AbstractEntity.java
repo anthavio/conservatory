@@ -19,9 +19,13 @@ import javax.validation.constraints.Size;
 @Cacheable
 public abstract class AbstractEntity {
 
+	public static final String GENERATOR_NAME = "JPA_ID_GEN";
+
+	public static final String SEQUENCES_TABLE = "ID_SEQUENCES";
+
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE, generator = "JPA_ID_GEN")
-	@TableGenerator(name = "JPA_ID_GEN", initialValue = 100, allocationSize = 50, table = "SEQUENCES", pkColumnName = "SEQ_NAME", valueColumnName = "SEQ_VALUE")
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = GENERATOR_NAME)
+	@TableGenerator(name = AbstractEntity.GENERATOR_NAME, initialValue = 100, allocationSize = 50, table = SEQUENCES_TABLE, pkColumnName = "SEQ_NAME", valueColumnName = "SEQ_VALUE")
 	@Column(name = "ID")
 	private Long id;
 

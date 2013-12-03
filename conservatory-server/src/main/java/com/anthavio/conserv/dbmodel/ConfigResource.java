@@ -47,7 +47,7 @@ public class ConfigResource extends AbstractEntity {
 
 	@OneToMany(mappedBy = "configResource")
 	@OrderBy("CREATED_AT")
-	private List<ConfigTarget> configTargets;
+	private List<ConfigDeploy> configDeploys;
 
 	ConfigResource() {
 		//JPA

@@ -1,8 +1,5 @@
 package com.anthavio.conserv.web.api;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,10 +19,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import com.anthavio.conserv.dbmodel.ConfigProperty;
 import com.anthavio.conserv.model.Configuration;
 import com.anthavio.conserv.model.Property;
 import com.anthavio.conserv.services.ConservService;
+import com.anthavio.conserv.services.PropertiesConverter;
+import com.anthavio.util.PropertiesUtil.PropertyLine;
 
 /**
  * 
@@ -69,28 +66,19 @@ public class ConservRestController {
 		return irsdax.getMessage();
 	}
 
-	@Transactional
 	@RequestMapping(value = "config/{envCodeName}/{appCodeName}/{resourceCodeName}", method = RequestMethod.GET, headers = "Accept=application/json")
 	public @ResponseBody
 	Configuration getConfigurationJson(@PathVariable String envCodeName, @PathVariable String appCodeName,
 			@PathVariable String resourceCodeName) {
 
-		List<ConfigProperty> configProperties = service.loadFast(envCodeName, appCodeName, resourceCodeName);
-
-		ArrayList<Property> properties = new ArrayList<Property>();
-		for (ConfigProperty cp : configProperties) {
-			Property property = new Property(cp.getName(), cp.getType(), cp.getValue(), cp.getComment());
-			properties.add(property);
-		}
-
-		properties.add(new Property("binary.property", new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7,
-				8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4,
-				5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }));
+		List<PropertyLine> configLines = service.loadFast(envCodeName, appCodeName, resourceCodeName);
+		List<Property> properties = PropertiesConverter.instance().convertForClient(configLines);
+		/*
 		properties.add(new Property("string.property", "Some value"));
 		properties.add(new Property("integer.property", 132456789));
 		properties.add(new Property("date.property", new Date()));
 		properties.add(new Property("url.property", URI.create("http://test-www.nature.com:8080/zxzxzx")));
-
+		*/
 		return new Configuration(appCodeName, envCodeName, properties);
 	}
 

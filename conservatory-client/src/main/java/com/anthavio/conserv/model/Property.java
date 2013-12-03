@@ -21,12 +21,14 @@ public class Property implements Serializable {
 
 	public static enum ValueType {
 
-		STRING, INTEGER, PASSWORD, FLOAT, DATETIME, URL, BINARY;
+		STRING, INTEGER, PASSWORD, FLOAT, DATE, DATE_TIME, URL;
 	}
 
 	private static final long serialVersionUID = 1L;
 
-	public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
+	public static final String DATE_FORMAT = "yyyy-MM-dd";
+
+	public static final String DATE_TIME_FORMAT = DATE_FORMAT + "'T'HH:mm:ss";
 
 	private String name;
 
@@ -49,7 +51,12 @@ public class Property implements Serializable {
 	}
 
 	public Property(String name, Date date) {
-		this(name, ValueType.DATETIME, date != null ? new SimpleDateFormat(DATE_FORMAT).format(date) : null, null);
+		this(name, ValueType.DATE, date != null ? new SimpleDateFormat(DATE_FORMAT).format(date) : null, null);
+	}
+
+	public Property(String name, ValueType type, Date date) {
+		this(name, ValueType.DATE_TIME, date != null ? new SimpleDateFormat(type == ValueType.DATE_TIME ? DATE_TIME_FORMAT
+				: DATE_FORMAT).format(date) : null, null);
 	}
 
 	public Property(String name, URL url) {
@@ -58,10 +65,6 @@ public class Property implements Serializable {
 
 	public Property(String name, URI uri) {
 		this(name, ValueType.URL, uri != null ? String.valueOf(uri) : null, null);
-	}
-
-	public Property(String name, byte[] binary) {
-		this(name, ValueType.BINARY, binary != null ? new String(Base64.encodeBase64(binary, false)) : null, null);
 	}
 
 	public Property(String name, ValueType type, String value, String comment) {
@@ -156,9 +159,22 @@ public class Property implements Serializable {
 		}
 	}
 
+	public Date asDateTime() {
+		if (value == null || value.length() == 0) {
+			return null;
+		} else {
+			try {
+				return new SimpleDateFormat(DATE_TIME_FORMAT).parse(value);
+			} catch (ParseException px) {
+				throw new IllegalStateException("Cannot convert " + value + " to Date", px);
+			}
+		}
+	}
+
 	@Override
 	public String toString() {
-		return "Property [name=" + name + ", type=" + type + ", value=" + value + ", comment=" + comment + "]";
+		return "Property [name=" + name + ", type=" + type + ", value=" + ((type == ValueType.PASSWORD) ? "******" : value)
+				+ ", comment=" + comment + "]";
 	}
 
 	@Override

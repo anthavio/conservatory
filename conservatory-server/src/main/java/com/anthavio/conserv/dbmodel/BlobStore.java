@@ -16,24 +16,24 @@ import javax.persistence.TableGenerator;
  *
  */
 @Entity
-@Table(name = "BINARY_STORE")
-public class BinaryStore {
+@Table(name = "BLOB_STORE")
+public class BlobStore {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE, generator = "JPA_ID_GEN")
-	@TableGenerator(name = "JPA_ID_GEN", initialValue = 100, allocationSize = 50, table = "SEQUENCES", pkColumnName = "SEQ_NAME", valueColumnName = "SEQ_VALUE")
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = AbstractEntity.GENERATOR_NAME)
+	@TableGenerator(name = AbstractEntity.GENERATOR_NAME, initialValue = 100, allocationSize = 50, table = AbstractEntity.SEQUENCES_TABLE, pkColumnName = "SEQ_NAME", valueColumnName = "SEQ_VALUE")
 	@Column(name = "ID")
 	private Long id;
 
 	@Lob
-	@Column(name = "BINARY_VALUE", columnDefinition = "BLOB NOT NULL")
+	@Column(name = "BLOB_VALUE", columnDefinition = "BLOB NOT NULL")
 	private byte[] value;
 
-	BinaryStore() {
+	BlobStore() {
 		//JPA
 	}
 
-	public BinaryStore(byte[] value) {
+	public BlobStore(byte[] value) {
 		this.value = value;
 	}
 

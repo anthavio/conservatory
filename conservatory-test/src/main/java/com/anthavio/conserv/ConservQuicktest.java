@@ -1,7 +1,8 @@
 package com.anthavio.conserv;
 
-import java.util.Date;
+import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
@@ -9,17 +10,20 @@ import org.testng.annotations.Test;
 
 import com.anthavio.conserv.dbmodel.Application;
 import com.anthavio.conserv.dbmodel.ApplicationDao;
-import com.anthavio.conserv.dbmodel.ConfigProperty;
-import com.anthavio.conserv.dbmodel.ConfigPropertyDao;
+import com.anthavio.conserv.dbmodel.ConfigDocumentDao;
+import com.anthavio.conserv.dbmodel.ConfigDeploy;
+import com.anthavio.conserv.dbmodel.ConfigDeployDao;
+import com.anthavio.conserv.dbmodel.ConfigDocument;
 import com.anthavio.conserv.dbmodel.ConfigResource;
 import com.anthavio.conserv.dbmodel.ConfigResourceDao;
-import com.anthavio.conserv.dbmodel.ConfigTarget;
-import com.anthavio.conserv.dbmodel.ConfigTargetDao;
 import com.anthavio.conserv.dbmodel.Environment;
 import com.anthavio.conserv.dbmodel.EnvironmentDao;
 import com.anthavio.conserv.dbmodel.LogicalGroup;
 import com.anthavio.conserv.dbmodel.LogicalGroupDao;
+import com.anthavio.conserv.model.Property;
+import com.anthavio.conserv.services.PropertiesConverter;
 import com.anthavio.spring.test.ContextRefLoader;
+import com.anthavio.util.PropertiesUtil.PropertyLine;
 
 /**
  * 
@@ -42,17 +46,32 @@ public class ConservQuicktest extends AbstractTestNGSpringContextTests {
 	private ConfigResourceDao resourceDao;
 
 	@Autowired
-	private ConfigTargetDao targetDao;
+	private ConfigDeployDao deployDao;
 
 	@Autowired
-	private ConfigPropertyDao propertyDao;
+	private ConfigDocumentDao documentDao;
 
 	@Test
-	//@Transactional
-	public void test() throws Exception {
+	public void properties() throws Exception {
+		String propString = IOUtils.toString(getClass().getResourceAsStream("/example.properties"), "UTF-8");
+		List<PropertyLine> plines = PropertiesConverter.instance().convert(propString);
+		for (PropertyLine propertyLine : plines) {
+			//System.out.println(propertyLine.getName());
+			System.out.println(propertyLine.toFileLine());
+		}
 
-		//propertyDao.deleteAllInBatch();
-		targetDao.deleteAllInBatch();
+		List<Property> clines = PropertiesConverter.instance().convertForClient(plines);
+		for (Property property : clines) {
+			System.out.println(property);
+		}
+
+	}
+
+	@Test
+	public void exampleData() throws Exception {
+
+		deployDao.deleteAllInBatch();
+		documentDao.deleteAllInBatch();
 		resourceDao.deleteAllInBatch();
 		environmentDao.deleteAllInBatch();
 		applicationDao.deleteAllInBatch();
@@ -65,31 +84,53 @@ public class ConservQuicktest extends AbstractTestNGSpringContextTests {
 		application.setIdGroup(group.getId());
 		applicationDao.save(application);
 
-		Environment etest = new Environment("Test", "test", true);
-		Environment estaging = new Environment("Staging", "staging", true);
-		Environment elive = new Environment("Live", "live", true);
-		environmentDao.save(etest);
-		environmentDao.save(estaging);
-		environmentDao.save(elive);
+		Environment envTest = new Environment("Test", "test", true);
+		Environment envStaging = new Environment("Staging", "staging", true);
+		Environment envLive = new Environment("Live", "live", true);
+		environmentDao.save(envTest);
+		environmentDao.save(envStaging);
+		environmentDao.save(envLive);
 
 		ConfigResource resource = new ConfigResource("Example Config", "properties", application);
 		resourceDao.save(resource);
 
-		ConfigTarget ttest = new ConfigTarget(resource, etest, "Example Config on Test");
-		targetDao.save(ttest);
-		ConfigTarget tstaging = new ConfigTarget(resource, estaging, "Example Config on Staging");
-		targetDao.save(tstaging);
-		ConfigTarget tlive = new ConfigTarget(resource, elive, "Example Config on Live");
-		targetDao.save(tlive);
+		//There is circular dependence between ConfigDocument and ConfigDeploy
 
+		String propString = IOUtils.toString(getClass().getResourceAsStream("/example.properties"), "UTF-8");
+
+		ConfigDeploy deployTest = new ConfigDeploy(resource, envTest, "Example Config on Test");
+		deployDao.save(deployTest);
+		ConfigDeploy deployStaging = new ConfigDeploy(resource, envStaging, "Example Config on Staging");
+		deployDao.save(deployStaging);
+		ConfigDeploy deployLive = new ConfigDeploy(resource, envLive, "Example Config on Live");
+		deployDao.save(deployLive);
+
+		ConfigDocument documentTest = new ConfigDocument(deployTest, propString);
+		documentDao.save(documentTest);
+
+		ConfigDocument documentStaging = new ConfigDocument(deployStaging, propString);
+		documentDao.save(documentStaging);
+
+		ConfigDocument documentLive = new ConfigDocument(deployLive, propString);
+		documentDao.save(documentLive);
+
+		//Set effective version of ConfigDocument into ConfigDeploy
+		deployTest.setIdDocument(documentTest.getId());
+		deployDao.save(deployTest);
+		deployStaging.setIdDocument(documentStaging.getId());
+		deployDao.save(deployStaging);
+		deployLive.setIdDocument(documentLive.getId());
+		deployDao.save(deployLive);
+
+		/*
 		ConfigProperty property1 = new ConfigProperty(tlive, "string.property", "Blah blah blah");
 		ConfigProperty property2 = new ConfigProperty(tlive, "integer.property", 123456789);
 		ConfigProperty property3 = new ConfigProperty(tlive, "date.property", new Date());
 		propertyDao.save(property1);
 		propertyDao.save(property2);
 		propertyDao.save(property3);
-
-		targetDao.save(tlive); //insert new 
+		 */
+		//deployDao.save(tlive); //insert new 
 
 		applicationDao.findAll();
 		//applicationDao.findAll();
