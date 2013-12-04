@@ -11,8 +11,11 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
+import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -34,22 +37,38 @@ public class ConfigDocument {
 	private Long id;
 
 	@Lob
-	@Column(name = "CLOB_VALUE", columnDefinition = "CLOB NOT NULL")
+	@Column(name = "CLOB_VALUE", columnDefinition = "CLOB NOT NULL", updatable = false)
 	private String value;
 
+	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "CREATED_AT", nullable = false, updatable = false)
 	private Date createdAt; //set only in constructor
 
 	@NotNull
-	@Column(name = "ID_CONFIG_DEPLOY", nullable = false)
+	@Column(name = "ID_CONFIG_DEPLOY", nullable = false, updatable = false)
 	private Long idConfigDeploy;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_CONFIG_DEPLOY", referencedColumnName = "ID", insertable = false, updatable = false)
 	private ConfigDeploy configDeploy;
 
+	@PreUpdate
+	public void preUpdate() {
+		throw new IllegalStateException("ConfigDocument is insertable only and must not be updated");
+	}
+
 	ConfigDocument() {
 		//JPA
+	}
+
+	/**
+	 * If loaded from search index store...
+	 */
+	public ConfigDocument(Long id, Long idConfigDeploy, Date createdAt, String value) {
+		this.id = id;
+		this.idConfigDeploy = idConfigDeploy;
+		this.createdAt = createdAt;
+		this.value = value;
 	}
 
 	public ConfigDocument(ConfigDeploy configDeploy, String value) {
@@ -65,6 +84,23 @@ public class ConfigDocument {
 
 	public String getValue() {
 		return value;
+	}
+
+	public Date getCreatedAt() {
+		return createdAt;
+	}
+
+	public Long getIdConfigDeploy() {
+		return idConfigDeploy;
+	}
+
+	public ConfigDeploy getConfigDeploy() {
+		return configDeploy;
+	}
+
+	@Override
+	public String toString() {
+		return "ConfigDocument [id=" + id + ", idConfigDeploy=" + idConfigDeploy + ", createdAt=" + createdAt + "]";
 	}
 
 }

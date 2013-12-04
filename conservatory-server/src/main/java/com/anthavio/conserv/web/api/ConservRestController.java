@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import com.anthavio.conserv.dbmodel.ConfigDocument;
 import com.anthavio.conserv.model.Configuration;
 import com.anthavio.conserv.model.Property;
 import com.anthavio.conserv.services.ConservService;
@@ -71,7 +72,7 @@ public class ConservRestController {
 	Configuration getConfigurationJson(@PathVariable String envCodeName, @PathVariable String appCodeName,
 			@PathVariable String resourceCodeName) {
 
-		List<PropertyLine> configLines = service.loadFast(envCodeName, appCodeName, resourceCodeName);
+		List<PropertyLine> configLines = service.loadAtOnce(envCodeName, appCodeName, resourceCodeName);
 		List<Property> properties = PropertiesConverter.instance().convertForClient(configLines);
 		/*
 		properties.add(new Property("string.property", "Some value"));
@@ -96,5 +97,12 @@ public class ConservRestController {
 			@PathVariable String resourceCodeName) {
 		Configuration configuration = getConfigurationJson(envCodeName, appCodeName, resourceCodeName);
 		return new JAXBElement<Configuration>(new QName("configuration"), Configuration.class, configuration);
+	}
+
+	@RequestMapping(value = "search/{searchExpression}", method = RequestMethod.GET)
+	public @ResponseBody
+	String search(@PathVariable String searchExpression) {
+		List<ConfigDocument> documents = service.searchDocument(searchExpression);
+		return documents.toString();
 	}
 }

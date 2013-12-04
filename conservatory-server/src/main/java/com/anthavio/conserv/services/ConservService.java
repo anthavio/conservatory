@@ -13,9 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.anthavio.conserv.dbmodel.Application;
 import com.anthavio.conserv.dbmodel.ApplicationDao;
-import com.anthavio.conserv.dbmodel.ConfigDocument;
 import com.anthavio.conserv.dbmodel.ConfigDeploy;
 import com.anthavio.conserv.dbmodel.ConfigDeployDao;
+import com.anthavio.conserv.dbmodel.ConfigDocument;
+import com.anthavio.conserv.dbmodel.ConfigDocumentDao;
 import com.anthavio.conserv.dbmodel.ConfigResource;
 import com.anthavio.conserv.dbmodel.ConfigResourceDao;
 import com.anthavio.conserv.dbmodel.Environment;
@@ -44,11 +45,17 @@ public class ConservService {
 	@Autowired
 	private ConfigDeployDao configDeployDao;
 
+	@Autowired
+	private ConfigDocumentDao documentDao;
+
 	@PersistenceContext
-	private EntityManager em;
+	private EntityManager entityManager;
+
+	@Autowired
+	private IndexSearchService searchService;
 
 	@Transactional(readOnly = true)
-	public List<PropertyLine> loadDebug(String envCodeName, String appCodeName, String resourceCodeName) {
+	public List<PropertyLine> loadStepByStep(String envCodeName, String appCodeName, String resourceCodeName) {
 
 		Application application = applicationDao.findByCodeName(appCodeName);
 		if (application == null) {
@@ -84,7 +91,7 @@ public class ConservService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<PropertyLine> loadFast(String envCodeName, String appCodeName, String resourceCodeName) {
+	public List<PropertyLine> loadAtOnce(String envCodeName, String appCodeName, String resourceCodeName) {
 
 		QConfigDeploy qDeploy = QConfigDeploy.configDeploy;
 		QConfigProperty qProperty = QConfigProperty.configProperty;
@@ -101,7 +108,7 @@ public class ConservService {
 		//BooleanExpression bLatest = qDeploy.createdAt.eq(new JPASubQuery().from(qDeploy).where(qDeploy.state.eq(ConfigDeployState.ACTIVE)).unique(qDeploy.createdAt.max()));
 		//configDao.findOne(app.and(env));
 
-		JPAQuery jpq = new JPAQuery(em);
+		JPAQuery jpq = new JPAQuery(entityManager);
 
 		//combination of leftJoin fetch and distinct is the key here
 		//fetch caused that multiple result items are returned
@@ -123,5 +130,18 @@ public class ConservService {
 					+ envCodeName + "' Application '" + appCodeName + "' Resource '" + resourceCodeName + "'", 1, deploys.size());
 
 		}
+	}
+
+	@Transactional
+	public void saveDocument(ConfigDocument document) {
+		documentDao.save(document);
+		searchService.indexDocument(document);
+	}
+
+	public List<ConfigDocument> searchDocument(String searchExpression) {
+		//We store all ConfigDocument fields in ElasticSearch so far...
+		List<ConfigDocument> documents = searchService.searchDocument(searchExpression);
+		System.out.println(documents);
+		return documents;
 	}
 }

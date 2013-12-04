@@ -156,6 +156,18 @@
 			<artifactId>hibernate-ehcache</artifactId>
 			<version>4.2.7.SP1</version>
 		</dependency>
+		<!--
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-search</artifactId>
+			<version>4.4.0.Final</version>
+		</dependency>
+		-->
+		<dependency>
+			<groupId>org.elasticsearch</groupId>
+			<artifactId>elasticsearch</artifactId>
+			<version>0.90.7</version>
+		</dependency>
 		
 		<dependency>
 			<groupId>com.mysema.querydsl</groupId>

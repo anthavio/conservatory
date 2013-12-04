@@ -4,16 +4,17 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
+import org.springframework.test.context.testng.AbstractTransactionalTestNGSpringContextTests;
 import org.testng.annotations.Test;
 
 import com.anthavio.conserv.dbmodel.Application;
 import com.anthavio.conserv.dbmodel.ApplicationDao;
-import com.anthavio.conserv.dbmodel.ConfigDocumentDao;
 import com.anthavio.conserv.dbmodel.ConfigDeploy;
 import com.anthavio.conserv.dbmodel.ConfigDeployDao;
 import com.anthavio.conserv.dbmodel.ConfigDocument;
+import com.anthavio.conserv.dbmodel.ConfigDocumentDao;
 import com.anthavio.conserv.dbmodel.ConfigResource;
 import com.anthavio.conserv.dbmodel.ConfigResourceDao;
 import com.anthavio.conserv.dbmodel.Environment;
@@ -21,6 +22,7 @@ import com.anthavio.conserv.dbmodel.EnvironmentDao;
 import com.anthavio.conserv.dbmodel.LogicalGroup;
 import com.anthavio.conserv.dbmodel.LogicalGroupDao;
 import com.anthavio.conserv.model.Property;
+import com.anthavio.conserv.services.ConservService;
 import com.anthavio.conserv.services.PropertiesConverter;
 import com.anthavio.spring.test.ContextRefLoader;
 import com.anthavio.util.PropertiesUtil.PropertyLine;
@@ -31,7 +33,7 @@ import com.anthavio.util.PropertiesUtil.PropertyLine;
  *
  */
 @ContextConfiguration(locations = { "conserv-services", "classpath:spring-locator.xml" }, loader = ContextRefLoader.class)
-public class ConservQuicktest extends AbstractTestNGSpringContextTests {
+public class ConservQuicktest extends AbstractTransactionalTestNGSpringContextTests {
 
 	@Autowired
 	private LogicalGroupDao groupDao;
@@ -51,7 +53,10 @@ public class ConservQuicktest extends AbstractTestNGSpringContextTests {
 	@Autowired
 	private ConfigDocumentDao documentDao;
 
-	@Test
+	@Autowired
+	private ConservService service;
+
+	//@Test
 	public void properties() throws Exception {
 		String propString = IOUtils.toString(getClass().getResourceAsStream("/example.properties"), "UTF-8");
 		List<PropertyLine> plines = PropertiesConverter.instance().convert(propString);
@@ -68,8 +73,14 @@ public class ConservQuicktest extends AbstractTestNGSpringContextTests {
 	}
 
 	@Test
+	@Rollback(false)
 	public void exampleData() throws Exception {
-
+		List<ConfigDeploy> deploys = deployDao.findAll();
+		for (ConfigDeploy deploy : deploys) {
+			deploy.setIdDocumentEffective(null);
+			deployDao.saveAndFlush(deploy);
+		}
+		documentDao.deleteAllInBatch();
 		deployDao.deleteAllInBatch();
 		documentDao.deleteAllInBatch();
 		resourceDao.deleteAllInBatch();
@@ -106,20 +117,20 @@ public class ConservQuicktest extends AbstractTestNGSpringContextTests {
 		deployDao.save(deployLive);
 
 		ConfigDocument documentTest = new ConfigDocument(deployTest, propString);
-		documentDao.save(documentTest);
+		service.saveDocument(documentTest);
 
 		ConfigDocument documentStaging = new ConfigDocument(deployStaging, propString);
-		documentDao.save(documentStaging);
+		service.saveDocument(documentStaging);
 
 		ConfigDocument documentLive = new ConfigDocument(deployLive, propString);
-		documentDao.save(documentLive);
+		service.saveDocument(documentLive);
 
 		//Set effective version of ConfigDocument into ConfigDeploy
-		deployTest.setIdDocument(documentTest.getId());
+		deployTest.setIdDocumentEffective(documentTest.getId());
 		deployDao.save(deployTest);
-		deployStaging.setIdDocument(documentStaging.getId());
+		deployStaging.setIdDocumentEffective(documentStaging.getId());
 		deployDao.save(deployStaging);
-		deployLive.setIdDocument(documentLive.getId());
+		deployLive.setIdDocumentEffective(documentLive.getId());
 		deployDao.save(deployLive);
 
 		/*

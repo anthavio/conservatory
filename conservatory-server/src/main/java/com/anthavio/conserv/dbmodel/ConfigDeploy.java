@@ -75,8 +75,8 @@ public class ConfigDeploy extends AbstractEntity {
 		this.environment = environment;
 	}
 
-	public void setIdDocument(Long idDocument) {
-		this.idDocumentEffective = idDocument;
+	public void setIdDocumentEffective(Long idDocumentEffective) {
+		this.idDocumentEffective = idDocumentEffective;
 	}
 
 	public Long getIdDocumentEffective() {
