@@ -11,8 +11,10 @@ public class ClientTest {
 
 	public static void main(String[] args) {
 		try {
-			ConservClient client = new ConservClient("http://localhost:9090/conserv/config/live/naturenews/properties");
-			Configuration configuration = client.getConfiguration("live", "naturenews", "properties");
+			ClientSettings settings = new ClientSettings("http://localhost:9090/conserv/api/config");
+			//settings.setConfigParser(new JaxbConfigParser());
+			ConservClient client = new ConservClient(settings);
+			Configuration configuration = client.getConfiguration("live", "example", "properties");
 			System.out.println(configuration);
 		} catch (Exception x) {
 			x.printStackTrace();

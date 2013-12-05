@@ -137,16 +137,17 @@ public class ServicesSpringConfig {
 		IndicesExistsResponse existsResponse = indexAdmin.prepareExists(index).execute().actionGet();
 		//http://stackoverflow.com/questions/12367877/change-settings-and-mappings-on-existing-index-in-elasticsearch
 		if (!existsResponse.isExists()) {
+			//create index with ConfigDocument Mapping...
 			indexAdmin.prepareCreate(index).addMapping(type, xbMapping).execute().actionGet();
 		}
 
+		//configuration and mapping can be downloaded and checked
 		ClusterStateResponse response = client.admin().cluster().prepareState().setFilterAll().setFilterMetaData(false)
 				.setFilterIndices(index).execute().actionGet();
 		IndexMetaData indexMetaData = response.getState().metaData().index(index);
 		Settings isettings = indexMetaData.settings();
 		MappingMetaData mapping = indexMetaData.mappings().get(type);
-		System.out.println(mapping.sourceAsMap());
-		//Mapping fails if index does not exist
+		System.out.println(mapping.sourceAsMap()); //it is here!
 		/*
 		PutMappingResponse actionGet = admin.indices().preparePutMapping(IndexSearchService.ES_INDEX_NAME)
 				.setType(ConfigDocument.class.getSimpleName()).setSource(xbMapping).execute().actionGet();
