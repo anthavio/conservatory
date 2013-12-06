@@ -26,7 +26,6 @@ import com.anthavio.conserv.dbmodel.QConfigDeploy;
 import com.anthavio.conserv.dbmodel.QConfigProperty;
 import com.anthavio.conserv.dbmodel.QConfigResource;
 import com.anthavio.conserv.dbmodel.QEnvironment;
-import com.anthavio.util.PropertiesUtil.PropertyLine;
 import com.mysema.query.jpa.impl.JPAQuery;
 import com.mysema.query.types.expr.BooleanExpression;
 
@@ -54,8 +53,14 @@ public class ConservService {
 	@Autowired
 	private IndexSearchService searchService;
 
+	@Transactional
+	public void saveDocument(ConfigDocument document) {
+		documentDao.save(document);
+		searchService.indexDocument(document);
+	}
+
 	@Transactional(readOnly = true)
-	public List<PropertyLine> loadStepByStep(String envCodeName, String appCodeName, String resourceCodeName) {
+	public ConfigDocument loadStepByStep(String envCodeName, String appCodeName, String resourceCodeName) {
 
 		Application application = applicationDao.findByCodeName(appCodeName);
 		if (application == null) {
@@ -87,11 +92,13 @@ public class ConservService {
 		}
 
 		ConfigDocument document = deploy.getDocumentEffective();
-		return PropertiesConverter.instance().convert(document.getValue());
+		document.getValue(); //Lazy load
+		return document;
+		//return PropertiesConverter.instance().convert(document.getValue());
 	}
 
 	@Transactional(readOnly = true)
-	public List<PropertyLine> loadAtOnce(String envCodeName, String appCodeName, String resourceCodeName) {
+	public ConfigDocument loadAtOnce(String envCodeName, String appCodeName, String resourceCodeName) {
 
 		QConfigDeploy qDeploy = QConfigDeploy.configDeploy;
 		QConfigProperty qProperty = QConfigProperty.configProperty;
@@ -124,18 +131,13 @@ public class ConservService {
 		} else if (deploys.size() == 1) {
 			//return targets.get(0).getProperties();
 			ConfigDocument document = deploys.get(0).getDocumentEffective();
-			return PropertiesConverter.instance().convert(document.getValue());
+			document.getValue(); //Lazy load
+			return document;
 		} else {
 			throw new IncorrectResultSizeDataAccessException("Multiple records of Configuration found for Environment '"
 					+ envCodeName + "' Application '" + appCodeName + "' Resource '" + resourceCodeName + "'", 1, deploys.size());
 
 		}
-	}
-
-	@Transactional
-	public void saveDocument(ConfigDocument document) {
-		documentDao.save(document);
-		searchService.indexDocument(document);
 	}
 
 	public List<ConfigDocument> searchDocument(String searchExpression) {

@@ -19,6 +19,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.anthavio.conserv.client.ConfigParser.Format;
+import com.anthavio.conserv.client.ConservLoader.LoadResult;
 import com.anthavio.conserv.model.Config;
 import com.anthavio.conserv.model.Property;
 
@@ -60,7 +62,7 @@ public class ConservClient {
 		listeners.add(listener);
 	}
 
-	public Config getConfiguration(String environment, String application, String resource) {
+	public Config getConfig(String environment, String application, String resource) {
 		if (environment == null || environment.length() == 0) {
 			throw new IllegalArgumentException("Environment is blank: " + environment);
 		}
@@ -121,8 +123,8 @@ public class ConservClient {
 	 */
 	private Config load(URL resourceUrl, String fileName, boolean notify) throws IOException {
 		File fileConfig = new File(settings.getConfigDirectory(), fileName);
-		String[] aResponse = settings.getConservLoader().load(resourceUrl, settings);
-		Config config = parse(aResponse[0], aResponse[1]);
+		LoadResult result = settings.getConservLoader().load(resourceUrl, settings);
+		Config config = parse(result.getContent(), result.getMimeType());
 		Config oldConfig = null;
 		if (settings.getConfigMemoryCaching()) {
 			oldConfig = configCache.get(fileName);
@@ -138,7 +140,7 @@ public class ConservClient {
 				}
 			}
 			//save always new version (even when no changes exist)
-			save(fileConfig, aResponse[0]);
+			save(fileConfig, result.getContent());
 		}
 		if (notify && this.listeners != null && oldConfig != null
 				&& !oldConfig.getCreatedAt().equals(config.getCreatedAt())) {
@@ -194,7 +196,9 @@ public class ConservClient {
 			while ((line = reader.readLine()) != null) {
 				sb.append(line).append('\n');
 			}
-			return parse(sb.toString(), "xml");
+			String extension = file.getName().substring(file.getName().length() - 3);
+			Format format = Format.valueOf(extension);
+			return parse(sb.toString(), format.getMimeType());
 		} finally {
 			if (reader != null) {
 				reader.close();
@@ -231,11 +235,16 @@ public class ConservClient {
 
 	private Config parse(String content, String mimeType) throws IOException {
 		ConfigParser parser = settings.getConfigParser();
-		char fchar = getFirstCharacter(content);
-		if (parser.getFormat().supports(fchar)) {
-			return parser.parse(new StringReader(content));
+		Format format = parser.getFormat();
+		if (!mimeType.equals(format.getMimeType())) {
+			throw new IllegalStateException("Wrong mime type " + mimeType + " for " + parser.getFormat());
 		} else {
-			throw new IllegalStateException("Expected format is " + parser.getFormat() + " but content starts with " + fchar);
+			char fchar = getFirstCharacter(content);
+			if (!format.supports(fchar)) {
+				throw new IllegalStateException("Content starts with invalid character " + fchar + " for " + parser.getFormat());
+			} else {
+				return parser.parse(new StringReader(content));
+			}
 		}
 
 	}

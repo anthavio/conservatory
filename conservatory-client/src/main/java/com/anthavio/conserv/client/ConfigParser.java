@@ -28,9 +28,8 @@ public interface ConfigParser {
 			return this.fchar == fchar;
 		}
 
-		public String getAcceptHeader() {
-			// TODO Auto-generated method stub
-			return null;
+		public String getMimeType() {
+			return accept;
 		}
 	}
 

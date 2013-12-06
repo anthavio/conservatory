@@ -20,11 +20,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import com.anthavio.conserv.dbmodel.ConfigDocument;
-import com.anthavio.conserv.model.Configuration;
+import com.anthavio.conserv.model.Config;
 import com.anthavio.conserv.model.Property;
 import com.anthavio.conserv.services.ConservService;
 import com.anthavio.conserv.services.PropertiesConverter;
-import com.anthavio.util.PropertiesUtil.PropertyLine;
 
 /**
  * 
@@ -69,34 +68,35 @@ public class ConservRestController {
 
 	@RequestMapping(value = "config/{envCodeName}/{appCodeName}/{resourceCodeName}", method = RequestMethod.GET, headers = "Accept=application/json")
 	public @ResponseBody
-	Configuration getConfigurationJson(@PathVariable String envCodeName, @PathVariable String appCodeName,
+	Config getConfigurationJson(@PathVariable String envCodeName, @PathVariable String appCodeName,
 			@PathVariable String resourceCodeName) {
 
-		List<PropertyLine> configLines = service.loadAtOnce(envCodeName, appCodeName, resourceCodeName);
-		List<Property> properties = PropertiesConverter.instance().convertForClient(configLines);
+		ConfigDocument document = service.loadAtOnce(envCodeName, appCodeName, resourceCodeName);
+		//PropertiesConverter.instance().convert(document.getValue());
+		List<Property> properties = PropertiesConverter.instance().convertForClient(document.getValue());
 		/*
 		properties.add(new Property("string.property", "Some value"));
 		properties.add(new Property("integer.property", 132456789));
 		properties.add(new Property("date.property", new Date()));
-		properties.add(new Property("url.property", URI.create("http://test-www.nature.com:8080/zxzxzx")));
+		properties.add(new Property("url.property", URI.create("http://test-www.example.com:8080/zxzxzx")));
 		*/
-		return new Configuration(appCodeName, envCodeName, properties);
+		return new Config(appCodeName, envCodeName, document.getCreatedAt(), properties);
 	}
 
 	@RequestMapping(value = "config/{envCodeName}/{appCodeName}/{resourceCodeName}", method = RequestMethod.GET, headers = "Accept=application/xml")
 	public @ResponseBody
-	JAXBElement<Configuration> getConfigurationXml(@PathVariable String envCodeName, @PathVariable String appCodeName,
+	JAXBElement<Config> getConfigurationXml(@PathVariable String envCodeName, @PathVariable String appCodeName,
 			@PathVariable String resourceCodeName) {
-		Configuration configuration = getConfigurationJson(envCodeName, appCodeName, resourceCodeName);
-		return new JAXBElement<Configuration>(new QName("configuration"), Configuration.class, configuration);
+		Config configuration = getConfigurationJson(envCodeName, appCodeName, resourceCodeName);
+		return new JAXBElement<Config>(new QName("configuration"), Config.class, configuration);
 	}
 
 	@RequestMapping(value = "config/{envCodeName}/{appCodeName}/{resourceCodeName}", method = RequestMethod.GET)
 	public @ResponseBody
-	JAXBElement<Configuration> getConfiguration(@PathVariable String envCodeName, @PathVariable String appCodeName,
+	JAXBElement<Config> getConfiguration(@PathVariable String envCodeName, @PathVariable String appCodeName,
 			@PathVariable String resourceCodeName) {
-		Configuration configuration = getConfigurationJson(envCodeName, appCodeName, resourceCodeName);
-		return new JAXBElement<Configuration>(new QName("configuration"), Configuration.class, configuration);
+		Config configuration = getConfigurationJson(envCodeName, appCodeName, resourceCodeName);
+		return new JAXBElement<Config>(new QName("configuration"), Config.class, configuration);
 	}
 
 	@RequestMapping(value = "search/{searchExpression}", method = RequestMethod.GET)

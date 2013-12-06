@@ -24,14 +24,14 @@ public class ConservUrlLoader implements ConservLoader {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	@Override
-	public String[] load(URL url, ClientSettings settings) throws IOException {
+	public LoadResult load(URL url, ClientSettings settings) throws IOException {
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 		HttpURLConnection.setFollowRedirects(settings.getFollowRedirects());
 		connection.setConnectTimeout(settings.getConnectTimeout());
 		connection.setReadTimeout(settings.getReadTimeout());
 		connection.setUseCaches(false);
 		connection.setRequestProperty("Accept-Charset", "utf-8");
-		connection.setRequestProperty("Accept", settings.getConfigParser().getFormat().getAcceptHeader());
+		connection.setRequestProperty("Accept", settings.getConfigParser().getFormat().getMimeType());
 
 		if (settings.getUsername() != null) {
 			if (logger.isDebugEnabled()) {
@@ -43,7 +43,7 @@ public class ConservUrlLoader implements ConservLoader {
 		}
 
 		if (logger.isDebugEnabled()) {
-			logger.debug("Requesting: " + url);
+			logger.debug("Request " + settings.getConfigParser().getFormat() + " from " + url);
 		}
 		int responseCode = connection.getResponseCode(); //server interaction happens right here
 
@@ -55,18 +55,19 @@ public class ConservUrlLoader implements ConservLoader {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Error:\n" + errorContent);
 			}
-			throw new IOException("Response " + responseCode + " " + connection.getResponseMessage());
+			throw new IOException("Response " + responseCode + " " + connection.getResponseMessage()); //XXX better exception
 		}
 
 		String responseContent = consume(connection.getInputStream(), contentType[1]);
 		if (logger.isDebugEnabled()) {
 			//Just a response message on debug level 
-			logger.debug("Response: " + responseCode + " Message: " + connection.getResponseMessage());
+			logger.debug("Response: " + responseCode + ", Message: " + connection.getResponseMessage() + ", Type: "
+					+ contentType[0]);
 		} else if (logger.isTraceEnabled()) {
 			//Log response body only on trace level
 			logger.trace("Response:\n" + responseContent);
 		}
-		return new String[] { responseContent, contentType[0], contentType[1] };
+		return new LoadResult(contentType[0], contentType[1], responseContent);
 	}
 
 	private String consume(InputStream stream, String encoding) throws IOException {

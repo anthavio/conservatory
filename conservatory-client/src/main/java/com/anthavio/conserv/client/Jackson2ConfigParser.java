@@ -2,8 +2,10 @@ package com.anthavio.conserv.client;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringWriter;
 
 import com.anthavio.conserv.model.Config;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -34,6 +36,21 @@ public class Jackson2ConfigParser implements ConfigParser {
 	@Override
 	public Config parse(Reader reader) throws IOException {
 		return mapper.readValue(reader, Config.class);
+	}
+
+	/**
+	 * Well, for testing mostly...
+	 */
+	public String marshall(Config config) {
+		try {
+			StringWriter sw = new StringWriter();
+			mapper.writeValue(sw, config);
+			return sw.toString();
+		} catch (JsonProcessingException jmx) {
+			throw new IllegalStateException("This should never happen", jmx);
+		} catch (IOException iox) {
+			throw new IllegalStateException("This should never happen", iox);
+		}
 	}
 
 }

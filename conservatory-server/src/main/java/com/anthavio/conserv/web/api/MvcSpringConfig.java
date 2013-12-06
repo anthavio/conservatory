@@ -53,7 +53,7 @@ public class MvcSpringConfig extends WebMvcConfigurerAdapter {
 		try {
 			Jaxb2Marshaller jaxb2Marshaller = new Jaxb2Marshaller();
 			jaxb2Marshaller.setSupportJaxbElementClass(true);
-			jaxb2Marshaller.setClassesToBeBound(com.anthavio.conserv.model.Configuration.class);
+			jaxb2Marshaller.setClassesToBeBound(com.anthavio.conserv.model.Config.class);
 			jaxb2Marshaller.afterPropertiesSet();
 			converters.add(new MarshallingHttpMessageConverter(jaxb2Marshaller));
 		} catch (Exception x) {
