@@ -3,7 +3,7 @@ package com.anthavio.conserv.client;
 import java.io.IOException;
 import java.io.Reader;
 
-import com.anthavio.conserv.model.Configuration;
+import com.anthavio.conserv.model.Config;
 
 /**
  * 
@@ -13,10 +13,28 @@ import com.anthavio.conserv.model.Configuration;
 public interface ConfigParser {
 
 	public static enum Format {
-		XML, JSON;
+		XML('<', "application/xml"), JSON('{', "application/json");
+
+		private final char fchar;
+
+		private final String accept;
+
+		private Format(char fchar, String accept) {
+			this.fchar = fchar;
+			this.accept = accept;
+		}
+
+		public boolean supports(char fchar) {
+			return this.fchar == fchar;
+		}
+
+		public String getAcceptHeader() {
+			// TODO Auto-generated method stub
+			return null;
+		}
 	}
 
 	public Format getFormat();
 
-	public Configuration parse(Reader reader) throws IOException;
+	public Config parse(Reader reader) throws IOException;
 }

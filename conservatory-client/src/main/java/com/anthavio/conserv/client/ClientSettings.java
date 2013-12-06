@@ -22,10 +22,15 @@ public class ClientSettings {
 
 	private int readTimeout = 5000;
 
-	private ConfigParser configParser;
+	private ConfigParser configParser = ConfigParserFactory.build();
 
-	//keep last server loaded version locally
-	private boolean configKeeping = true;
+	private ConservLoader conservLoader = new ConservUrlLoader();
+
+	//keep last server loaded version in memory
+	private boolean configMemoryCaching = true;
+
+	//keep last server loaded version in file
+	private boolean configFileCaching = true;
 
 	//where to keep configuration files
 	private String configDirectory = System.getProperty("java.io.tmpdir");
@@ -101,12 +106,20 @@ public class ClientSettings {
 		this.configDirectory = configDirectory;
 	}
 
-	public boolean getConfigKeeping() {
-		return configKeeping;
+	public boolean getConfigFileCaching() {
+		return configFileCaching;
 	}
 
 	public void setConfigKeeping(boolean configKeeping) {
-		this.configKeeping = configKeeping;
+		this.configFileCaching = configKeeping;
+	}
+
+	public boolean getConfigMemoryCaching() {
+		return configMemoryCaching;
+	}
+
+	public void setConfigMemoryCaching(boolean configMemoryCaching) {
+		this.configMemoryCaching = configMemoryCaching;
 	}
 
 	public ConfigParser getConfigParser() {
@@ -117,11 +130,19 @@ public class ClientSettings {
 		this.configParser = configParser;
 	}
 
+	public ConservLoader getConservLoader() {
+		return conservLoader;
+	}
+
+	public void setConservLoader(ConservLoader conservLoader) {
+		this.conservLoader = conservLoader;
+	}
+
 	@Override
 	public String toString() {
 		return "ClientSettings [serverUrl=" + serverUrl + ", username=" + username + ", password=" + /*password*/"******"
 				+ ", followRedirects=" + followRedirects + ", connectTimeout=" + connectTimeout + ", readTimeout="
-				+ readTimeout + ", configKeeping=" + configKeeping + ", configDirectory=" + configDirectory + "]";
+				+ readTimeout + ", configKeeping=" + configFileCaching + ", configDirectory=" + configDirectory + "]";
 	}
 
 }

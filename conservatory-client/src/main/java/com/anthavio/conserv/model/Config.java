@@ -1,6 +1,7 @@
 package com.anthavio.conserv.model;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -9,7 +10,7 @@ import java.util.List;
  * @author martin.vanek
  *
  */
-public class Configuration implements Serializable {
+public class Config implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -17,16 +18,28 @@ public class Configuration implements Serializable {
 
 	private String environment;
 
+	private Date createdAt;
+
 	private List<Property> properties;
 
-	Configuration() {
+	Config() {
 		//JAXB
 	}
 
-	public Configuration(String aplication, String environment, List<Property> properties) {
+	public Config(String aplication, String environment, Date createdAt, List<Property> properties) {
 		this.aplication = aplication;
 		this.environment = environment;
+		this.createdAt = createdAt;
 		this.properties = properties;
+	}
+
+	public Property getProperty(String name) {
+		for (Property property : properties) {
+			if (property.getName().equals(name)) {
+				return property;
+			}
+		}
+		return null;
 	}
 
 	public String getAplication() {
@@ -45,6 +58,14 @@ public class Configuration implements Serializable {
 		this.aplication = aplication;
 	}
 
+	public Date getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(Date createdAt) {
+		this.createdAt = createdAt;
+	}
+
 	public void setEnvironment(String environment) {
 		this.environment = environment;
 	}
@@ -55,8 +76,8 @@ public class Configuration implements Serializable {
 
 	@Override
 	public String toString() {
-		return "Configuration [aplication=" + aplication + ", environment=" + environment + ", properties=" + properties
-				+ "]";
+		return "Configuration [aplication=" + aplication + ", environment=" + environment + ", createdAt=" + createdAt
+				+ ", properties=" + properties + "]";
 	}
 
 	@Override
@@ -64,8 +85,8 @@ public class Configuration implements Serializable {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((aplication == null) ? 0 : aplication.hashCode());
+		result = prime * result + ((createdAt == null) ? 0 : createdAt.hashCode());
 		result = prime * result + ((environment == null) ? 0 : environment.hashCode());
-		result = prime * result + ((properties == null) ? 0 : properties.hashCode());
 		return result;
 	}
 
@@ -77,11 +98,16 @@ public class Configuration implements Serializable {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Configuration other = (Configuration) obj;
+		Config other = (Config) obj;
 		if (aplication == null) {
 			if (other.aplication != null)
 				return false;
 		} else if (!aplication.equals(other.aplication))
+			return false;
+		if (createdAt == null) {
+			if (other.createdAt != null)
+				return false;
+		} else if (!createdAt.equals(other.createdAt))
 			return false;
 		if (environment == null) {
 			if (other.environment != null)

@@ -5,24 +5,22 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.Writer;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.anthavio.conserv.client.ConfigParser.Format;
-import com.anthavio.conserv.model.Configuration;
+import com.anthavio.conserv.model.Config;
+import com.anthavio.conserv.model.Property;
 
 /**
  * 
@@ -36,6 +34,10 @@ public class ConservClient {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private final ClientSettings settings;
+
+	private List<PropertyChangeListener> listeners;
+
+	private final Map<String, Config> configCache = new HashMap<String, Config>();
 
 	public ConservClient(String serverUrl) {
 		this(new ClientSettings(serverUrl));
@@ -51,7 +53,14 @@ public class ConservClient {
 		}
 	}
 
-	public Configuration getConfiguration(String environment, String application, String resource) {
+	public void addListener(PropertyChangeListener listener) {
+		if (listeners == null) {
+			listeners = new ArrayList<PropertyChangeListener>();
+		}
+		listeners.add(listener);
+	}
+
+	public Config getConfiguration(String environment, String application, String resource) {
 		if (environment == null || environment.length() == 0) {
 			throw new IllegalArgumentException("Environment is blank: " + environment);
 		}
@@ -76,31 +85,107 @@ public class ConservClient {
 			throw new IllegalStateException("Malformed resource url: " + configPath, mux);
 		}
 
-		String filename = configPath.replace('/', '-');
-		File fileConfig = new File(settings.getConfigDirectory(), filename);
+		String fileName = configPath.replace('/', '-') + "." + settings.getConfigParser().getFormat();
 		try {
-			String[] aResponse = load(resourceUrl);
-			Configuration config = parse(aResponse[0], aResponse[1]);
-			save(fileConfig, aResponse[0]);
-			return config;
+
+			return load(resourceUrl, fileName, false);
+
 		} catch (Exception x) {
-			if (settings.getConfigKeeping() && fileConfig.exists()) {
-				logger.error("Configuration server load failed", x);
-				try {
-					Configuration config = load(fileConfig);
-					logger.info("Configuration loaded from " + fileConfig);
+			if (settings.getConfigMemoryCaching()) {
+				Config config = configCache.get(fileName);
+				if (config != null) {
+					logger.error("Configuration server load failed", x);
+					logger.info("Configuration loaded from memory " + fileName);
 					return config;
-				} catch (Exception x2) {
-					logger.error("Configuration local load failed", x2);
-					throw new IllegalStateException("Configuration server and local load failed", x);
 				}
-			} else {
-				throw new IllegalStateException("Configuration server load failed", x); //TODO create better Exception
 			}
+			File fileConfig = new File(settings.getConfigDirectory(), fileName);
+			if (settings.getConfigFileCaching() && fileConfig.exists()) {
+				try {
+					Config config = load(fileConfig);
+					logger.error("Configuration server load failed", x);
+					logger.info("Configuration loaded from file " + fileConfig);
+					return config;
+				} catch (Exception fx) {
+					logger.error("Configuration local load failed", fx);
+					throw new IllegalStateException("Configuration server and file load failed", x);
+				}
+			}
+			//no local copy found
+			throw new IllegalStateException("Configuration server load failed", x);
 		}
 	}
 
-	private Configuration load(File file) throws Exception {
+	/**
+	 * Load from remote server, also notify listeners 
+	 */
+	private Config load(URL resourceUrl, String fileName, boolean notify) throws IOException {
+		File fileConfig = new File(settings.getConfigDirectory(), fileName);
+		String[] aResponse = settings.getConservLoader().load(resourceUrl, settings);
+		Config config = parse(aResponse[0], aResponse[1]);
+		Config oldConfig = null;
+		if (settings.getConfigMemoryCaching()) {
+			oldConfig = configCache.get(fileName);
+			configCache.put(fileName, config);
+		}
+		if (settings.getConfigFileCaching()) {
+			//load old only if not taken from memory
+			if (oldConfig == null && fileConfig.exists()) {
+				try {
+					oldConfig = load(fileConfig);
+				} catch (Exception x) {
+					logger.warn("Failed to load previous config from " + fileName, x);
+				}
+			}
+			//save always new version (even when no changes exist)
+			save(fileConfig, aResponse[0]);
+		}
+		if (notify && this.listeners != null && oldConfig != null
+				&& !oldConfig.getCreatedAt().equals(config.getCreatedAt())) {
+			checkChangesAndNotifyListeners(oldConfig, config);
+		}
+		return config;
+	}
+
+	private void checkChangesAndNotifyListeners(Config oldConfig, Config newConfig) {
+		//check for changed and removed values
+		for (Property oldProperty : oldConfig.getProperties()) {
+			Property newProperty = newConfig.getProperty(oldProperty.getName());
+			if (newProperty == null) {
+				for (PropertyChangeListener listener : listeners) {
+					try {
+						listener.propertyRemoved(oldProperty);
+					} catch (Exception x) {
+						logger.error("Property change listener notification failed", x);
+					}
+				}
+			} else if (!newProperty.getValue().equals(oldProperty.getValue())) {
+				for (PropertyChangeListener listener : listeners) {
+					try {
+						listener.propertyChanged(oldProperty, newProperty);
+					} catch (Exception x) {
+						logger.error("Property change listener notification failed", x);
+					}
+				}
+			}
+		}
+		//check for added values only (changed values are already checked)
+		for (Property newProperty : newConfig.getProperties()) {
+			Property oldProperty = newConfig.getProperty(newProperty.getName());
+			if (oldProperty == null) {
+				for (PropertyChangeListener listener : listeners) {
+					try {
+						listener.propertyAdded(newProperty);
+					} catch (Exception x) {
+						logger.error("Property change listener notification failed", x);
+					}
+				}
+			}
+		}
+
+	}
+
+	private Config load(File file) throws Exception {
 		BufferedReader reader = null;
 		try {
 			reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
@@ -127,7 +212,7 @@ public class ConservClient {
 				writer = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
 				writer.write(content); //TODO write content in more chunks...
 				writer.close();
-				logger.info("Configuration saved into " + file);
+				logger.debug("Configuration saved into " + file);
 			} catch (IOException iox) {
 				logger.warn("Error writing " + file, iox);
 			} finally {
@@ -144,25 +229,13 @@ public class ConservClient {
 		}
 	}
 
-	private Configuration parse(String content, String mimeType) throws IOException {
+	private Config parse(String content, String mimeType) throws IOException {
 		ConfigParser parser = settings.getConfigParser();
 		char fchar = getFirstCharacter(content);
-		if (parser.getFormat() == Format.XML) {
-			if (fchar == '<') {
-				return parser.parse(new StringReader(content));
-			} else {
-				throw new IllegalStateException("Expected format is " + parser.getFormat() + " but content starts with "
-						+ fchar);
-			}
-		} else if (parser.getFormat() == Format.JSON) {
-			if (fchar == '{') {
-				return parser.parse(new StringReader(content));
-			} else {
-				throw new IllegalStateException("Expected format is " + parser.getFormat() + " but content starts with "
-						+ fchar);
-			}
+		if (parser.getFormat().supports(fchar)) {
+			return parser.parse(new StringReader(content));
 		} else {
-			throw new IllegalStateException("Unsupported format " + parser.getFormat());
+			throw new IllegalStateException("Expected format is " + parser.getFormat() + " but content starts with " + fchar);
 		}
 
 	}
@@ -178,101 +251,5 @@ public class ConservClient {
 			}
 		}
 		return ' ';
-	}
-
-	private String[] load(URL url) throws IOException {
-		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-		HttpURLConnection.setFollowRedirects(settings.getFollowRedirects());
-		connection.setConnectTimeout(settings.getConnectTimeout());
-		connection.setReadTimeout(settings.getReadTimeout());
-		connection.setUseCaches(false);
-		connection.setRequestProperty("Accept-Charset", "utf-8");
-
-		switch (settings.getConfigParser().getFormat()) {
-		case XML:
-			connection.setRequestProperty("Accept", "application/xml"); //needs jaxb avaliable
-			break;
-		case JSON:
-			connection.setRequestProperty("Accept", "application/json"); //needs jackson 2 on classpath
-			break;
-		default:
-			throw new IllegalStateException("Unsuported format " + settings.getConfigParser().getFormat());
-		}
-
-		if (settings.getUsername() != null) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Setting BASIC authentication credentials for " + settings.getUsername());
-			}
-			byte[] bytes = (settings.getUsername() + ":" + settings.getPassword()).getBytes(Charset.forName("utf-8"));
-			String encoded = new String(Base64.encodeBase64(bytes, false));
-			connection.setRequestProperty("Authorization", "Basic " + encoded);
-		}
-
-		if (logger.isDebugEnabled()) {
-			logger.debug("Requesting: " + url);
-		}
-		int responseCode = connection.getResponseCode(); //server interaction happens right here
-
-		Map<String, List<String>> responseHeaders = connection.getHeaderFields();
-		String[] contentType = getContentType(responseHeaders);
-
-		if (responseCode != 200) {
-			String errorContent = consume(connection.getErrorStream(), contentType[1]);
-			if (logger.isDebugEnabled()) {
-				logger.debug("Error:\n" + errorContent);
-			}
-			throw new IOException("Response " + responseCode + " " + connection.getResponseMessage());
-		}
-
-		String responseContent = consume(connection.getInputStream(), contentType[1]);
-		if (logger.isDebugEnabled()) {
-			//Just a response message on debug level 
-			logger.debug("Response: " + responseCode + " Message: " + connection.getResponseMessage());
-		} else if (logger.isTraceEnabled()) {
-			//Log response body only on trace level
-			logger.trace("Response:\n" + responseContent);
-		}
-		return new String[] { responseContent, contentType[0], contentType[1] };
-	}
-
-	private String consume(InputStream stream, String encoding) throws IOException {
-		BufferedReader br = new BufferedReader(new InputStreamReader(stream, Charset.forName(encoding)));
-		try {
-			StringBuilder sb = new StringBuilder();
-			String line = null;
-			while ((line = br.readLine()) != null) {
-				sb.append(line).append('\n');
-			}
-			return sb.toString();
-		} finally {
-			br.close();
-		}
-	}
-
-	/**
-	 * Content-Type: application/xml; charset=utf-8
-	 * 
-	 * @return [0] mimeType, [1] encoding
-	 */
-	private String[] getContentType(Map<String, List<String>> headers) {
-		String[] retval = new String[] { "application/xml", "utf-8" }; //expected defaults
-		List<String> values = headers.get("Content-Type");
-		if (values != null && values.size() != 0) {
-			String value = values.get(0);
-			int idxSemCol = value.indexOf(';');
-			if (idxSemCol != -1) {
-				retval[0] = value.substring(0, idxSemCol);
-				int idxEquals = value.indexOf('=', idxSemCol);
-				if (idxEquals != -1) {
-					retval[1] = value.substring(idxEquals + 1).trim();
-				} else {
-					retval[1] = value.substring(idxSemCol + 1).trim(); //allows malformed format -> application/xml;utf-8
-				}
-			} else {
-				//charset part not present -> keep default encoding in retval[1]
-				retval[0] = value;
-			}
-		}
-		return retval;
 	}
 }

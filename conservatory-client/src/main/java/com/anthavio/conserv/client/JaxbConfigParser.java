@@ -9,7 +9,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
-import com.anthavio.conserv.model.Configuration;
+import com.anthavio.conserv.model.Config;
 
 /**
  * 
@@ -22,7 +22,7 @@ public class JaxbConfigParser implements ConfigParser {
 
 	public JaxbConfigParser() {
 		try {
-			context = JAXBContext.newInstance(Configuration.class);
+			context = JAXBContext.newInstance(Config.class);
 		} catch (JAXBException jaxbx) {
 			throw new IllegalStateException("This should never happen", jaxbx);
 		}
@@ -33,11 +33,11 @@ public class JaxbConfigParser implements ConfigParser {
 	}
 
 	@Override
-	public Configuration parse(Reader reader) throws IOException {
+	public Config parse(Reader reader) throws IOException {
 		Unmarshaller unmarshaller;
 		try {
 			unmarshaller = context.createUnmarshaller();
-			JAXBElement<Configuration> element = unmarshaller.unmarshal(new StreamSource(reader), Configuration.class);
+			JAXBElement<Config> element = unmarshaller.unmarshal(new StreamSource(reader), Config.class);
 			return element.getValue();
 		} catch (JAXBException jaxbx) {
 			throw new IllegalStateException("This should never happen", jaxbx);

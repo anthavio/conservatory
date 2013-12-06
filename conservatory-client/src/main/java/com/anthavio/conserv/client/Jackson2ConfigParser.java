@@ -3,7 +3,7 @@ package com.anthavio.conserv.client;
 import java.io.IOException;
 import java.io.Reader;
 
-import com.anthavio.conserv.model.Configuration;
+import com.anthavio.conserv.model.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -32,8 +32,8 @@ public class Jackson2ConfigParser implements ConfigParser {
 	}
 
 	@Override
-	public Configuration parse(Reader reader) throws IOException {
-		return mapper.readValue(reader, Configuration.class);
+	public Config parse(Reader reader) throws IOException {
+		return mapper.readValue(reader, Config.class);
 	}
 
 }

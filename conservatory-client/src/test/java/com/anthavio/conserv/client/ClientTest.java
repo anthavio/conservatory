@@ -1,6 +1,6 @@
 package com.anthavio.conserv.client;
 
-import com.anthavio.conserv.model.Configuration;
+import com.anthavio.conserv.model.Config;
 
 /**
  * 
@@ -14,7 +14,7 @@ public class ClientTest {
 			ClientSettings settings = new ClientSettings("http://localhost:9090/conserv/api/config");
 			//settings.setConfigParser(new JaxbConfigParser());
 			ConservClient client = new ConservClient(settings);
-			Configuration configuration = client.getConfiguration("live", "example", "properties");
+			Config configuration = client.getConfiguration("live", "example", "properties");
 			System.out.println(configuration);
 		} catch (Exception x) {
 			x.printStackTrace();
