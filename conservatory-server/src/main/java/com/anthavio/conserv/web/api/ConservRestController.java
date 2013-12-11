@@ -1,5 +1,6 @@
 package com.anthavio.conserv.web.api;
 
+import java.io.IOException;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -66,20 +67,23 @@ public class ConservRestController {
 		return irsdax.getMessage();
 	}
 
+	@RequestMapping(value = "config/{envCodeName}/{appCodeName}/{resourceCodeName}", method = RequestMethod.GET, produces = "text/plain")
+	public @ResponseBody
+	String getConfigurationPlain(@PathVariable String envCodeName, @PathVariable String appCodeName,
+			@PathVariable String resourceCodeName) throws IOException {
+
+		ConfigDocument document = service.loadAtOnce(envCodeName, appCodeName, resourceCodeName);
+		return document.getValue();
+	}
+
 	@RequestMapping(value = "config/{envCodeName}/{appCodeName}/{resourceCodeName}", method = RequestMethod.GET, headers = "Accept=application/json")
 	public @ResponseBody
 	Config getConfigurationJson(@PathVariable String envCodeName, @PathVariable String appCodeName,
 			@PathVariable String resourceCodeName) {
 
 		ConfigDocument document = service.loadAtOnce(envCodeName, appCodeName, resourceCodeName);
-		//PropertiesConverter.instance().convert(document.getValue());
 		List<Property> properties = PropertiesConverter.instance().convertForClient(document.getValue());
-		/*
-		properties.add(new Property("string.property", "Some value"));
-		properties.add(new Property("integer.property", 132456789));
-		properties.add(new Property("date.property", new Date()));
-		properties.add(new Property("url.property", URI.create("http://test-www.example.com:8080/zxzxzx")));
-		*/
+
 		return new Config(appCodeName, envCodeName, document.getCreatedAt(), properties);
 	}
 
@@ -87,16 +91,8 @@ public class ConservRestController {
 	public @ResponseBody
 	JAXBElement<Config> getConfigurationXml(@PathVariable String envCodeName, @PathVariable String appCodeName,
 			@PathVariable String resourceCodeName) {
-		Config configuration = getConfigurationJson(envCodeName, appCodeName, resourceCodeName);
-		return new JAXBElement<Config>(new QName("configuration"), Config.class, configuration);
-	}
-
-	@RequestMapping(value = "config/{envCodeName}/{appCodeName}/{resourceCodeName}", method = RequestMethod.GET)
-	public @ResponseBody
-	JAXBElement<Config> getConfiguration(@PathVariable String envCodeName, @PathVariable String appCodeName,
-			@PathVariable String resourceCodeName) {
-		Config configuration = getConfigurationJson(envCodeName, appCodeName, resourceCodeName);
-		return new JAXBElement<Config>(new QName("configuration"), Config.class, configuration);
+		Config config = getConfigurationJson(envCodeName, appCodeName, resourceCodeName);
+		return new JAXBElement<Config>(new QName("configuration"), Config.class, config);
 	}
 
 	@RequestMapping(value = "search/{searchExpression}", method = RequestMethod.GET)
