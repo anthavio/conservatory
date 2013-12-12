@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +25,7 @@ public class ConservUrlLoader implements ConservLoader {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	@Override
-	public LoadResult load(URL url, ClientSettings settings) throws IOException {
+	public LoadResult load(URL url, ClientSettings settings, Date lastModified) throws IOException {
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 		HttpURLConnection.setFollowRedirects(settings.getFollowRedirects());
 		connection.setConnectTimeout(settings.getConnectTimeout());
@@ -32,6 +33,9 @@ public class ConservUrlLoader implements ConservLoader {
 		connection.setUseCaches(false);
 		connection.setRequestProperty("Accept-Charset", "utf-8");
 		connection.setRequestProperty("Accept", settings.getConfigParser().getFormat().getMimeType());
+		if (lastModified != null) {
+			connection.setIfModifiedSince(lastModified.getTime());
+		}
 
 		if (settings.getUsername() != null) {
 			if (logger.isDebugEnabled()) {
@@ -50,8 +54,22 @@ public class ConservUrlLoader implements ConservLoader {
 		Map<String, List<String>> responseHeaders = connection.getHeaderFields();
 		String[] contentType = getContentType(responseHeaders);
 
-		if (responseCode != 200) {
-			String errorContent = consume(connection.getErrorStream(), contentType[1]);
+		if (logger.isDebugEnabled()) {
+			//Log just a response message on debug level 
+			logger.debug("Response: " + responseCode + ", Message: " + connection.getResponseMessage() + ", Type: "
+					+ contentType[0]);
+		}
+
+		if (responseCode == HttpURLConnection.HTTP_NOT_MODIFIED) {
+			return new LoadResult(responseCode, null, null, null); //nothing else...
+		}
+
+		if (responseCode != HttpURLConnection.HTTP_OK) {
+			InputStream stream = connection.getErrorStream();
+			if (stream == null) {
+				stream = connection.getInputStream();
+			}
+			String errorContent = consume(stream, contentType[1]);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Error:\n" + errorContent);
 			}
@@ -59,15 +77,11 @@ public class ConservUrlLoader implements ConservLoader {
 		}
 
 		String responseContent = consume(connection.getInputStream(), contentType[1]);
-		if (logger.isDebugEnabled()) {
-			//Just a response message on debug level 
-			logger.debug("Response: " + responseCode + ", Message: " + connection.getResponseMessage() + ", Type: "
-					+ contentType[0]);
-		} else if (logger.isTraceEnabled()) {
+		if (logger.isTraceEnabled()) {
 			//Log response body only on trace level
 			logger.trace("Response:\n" + responseContent);
 		}
-		return new LoadResult(contentType[0], contentType[1], responseContent);
+		return new LoadResult(responseCode, contentType[0], contentType[1], responseContent);
 	}
 
 	private String consume(InputStream stream, String encoding) throws IOException {

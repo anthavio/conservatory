@@ -25,7 +25,18 @@ import javax.validation.constraints.Size;
 public class ConfigResource extends AbstractEntity {
 
 	public static enum ConfigResourceType {
-		PROPERTIES;
+		PROPERTIES("text/plain");
+
+		private final String mimeType;
+
+		private ConfigResourceType(String mimeType) {
+			this.mimeType = mimeType;
+		}
+
+		public String getMimeType() {
+			return mimeType;
+		}
+
 	}
 
 	@Size(min = 3, max = 20)
@@ -59,4 +70,29 @@ public class ConfigResource extends AbstractEntity {
 		this.type = ConfigResourceType.PROPERTIES;
 		this.idApplication = application.getId();
 	}
+
+	public ConfigResourceType getType() {
+		return type;
+	}
+
+	public void setType(ConfigResourceType type) {
+		this.type = type;
+	}
+
+	public String getCodeName() {
+		return codeName;
+	}
+
+	public Long getIdApplication() {
+		return idApplication;
+	}
+
+	public Application getApplication() {
+		return application;
+	}
+
+	public List<ConfigDeploy> getConfigDeploys() {
+		return configDeploys;
+	}
+
 }

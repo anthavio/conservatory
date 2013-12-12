@@ -9,9 +9,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.Writer;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,10 +43,6 @@ public class ConservClient {
 
 	private final Map<String, Config> configCache = new HashMap<String, Config>();
 
-	public ConservClient(String serverUrl) {
-		this(new ClientSettings(serverUrl));
-	}
-
 	public ConservClient(ClientSettings settings) {
 		if (settings == null) {
 			throw new IllegalArgumentException("Null settings");
@@ -53,6 +51,10 @@ public class ConservClient {
 		if (settings.getConfigParser() == null) {
 			settings.setConfigParser(new JaxbConfigParser());
 		}
+	}
+
+	public ConservClient(String serverUrl) {
+		this(new ClientSettings(serverUrl));
 	}
 
 	public void addListener(PropertyChangeListener listener) {
@@ -84,107 +86,82 @@ public class ConservClient {
 			//may happen when environment/application/resource contains something illegal
 			resourceUrl = new URL(fullUrl);
 		} catch (MalformedURLException mux) {
-			throw new IllegalStateException("Malformed resource url: " + configPath, mux);
+			throw new ConservException("Malformed resource url: " + configPath, mux);
 		}
 
-		String fileName = configPath.replace('/', '-') + "." + settings.getConfigParser().getFormat();
-		try {
+		String configName = configPath.replace('/', '-') + "." + settings.getConfigParser().getFormat();
 
-			return load(resourceUrl, fileName, false);
-
-		} catch (Exception x) {
-			if (settings.getConfigMemoryCaching()) {
-				Config config = configCache.get(fileName);
-				if (config != null) {
-					logger.error("Configuration server load failed", x);
-					logger.info("Configuration loaded from memory " + fileName);
-					return config;
-				}
-			}
-			File fileConfig = new File(settings.getConfigDirectory(), fileName);
+		Config configOld = null;
+		if (settings.getConfigMemoryCaching()) {
+			configOld = configCache.get(configName);
+		}
+		File fileConfig = new File(settings.getConfigDirectory(), configName);
+		if (configOld == null) {
 			if (settings.getConfigFileCaching() && fileConfig.exists()) {
 				try {
-					Config config = load(fileConfig);
-					logger.error("Configuration server load failed", x);
-					logger.info("Configuration loaded from file " + fileConfig);
-					return config;
-				} catch (Exception fx) {
-					logger.error("Configuration local load failed", fx);
-					throw new IllegalStateException("Configuration server and file load failed", x);
+					configOld = load(fileConfig);
+				} catch (Exception x) {
+					logger.warn("Failed to load previous config from " + configName, x);
 				}
 			}
-			//no local copy found
-			throw new IllegalStateException("Configuration server load failed", x);
+		}
+
+		try {
+
+			//Config configNew = load(resourceUrl, configName, configOld);
+
+			Date lastModified = configOld != null ? configOld.getCreatedAt() : null;
+			LoadResult result = settings.getConservLoader().load(resourceUrl, settings, lastModified);
+			if (result.getHttpCode() == HttpURLConnection.HTTP_NOT_MODIFIED) {
+				return configOld; //Leave now
+			}
+
+			Config configNew = parse(result.getContent(), result.getMimeType());
+			if (settings.getConfigMemoryCaching()) {
+				configCache.put(configName, configNew);
+			}
+			if (settings.getConfigFileCaching()) {
+				//save always new version (even when no changes exist)
+				save(fileConfig, result.getContent());
+			}
+			/*
+			if (bNodify && this.listeners != null && configOld != null
+					&& !configOld.getCreatedAt().equals(configNew.getCreatedAt())) {
+				checkChangesAndNotifyListeners(configOld, configNew);
+			}
+			*/
+			return configNew;
+
+		} catch (Exception x) {
+			if (configOld != null) {
+				logger.error("Configuration server load failed. Returning cached configuration", x);
+				return configOld;
+			} else {
+				throw new ConservException("Configuration server load failed", x);
+			}
 		}
 	}
 
 	/**
-	 * Load from remote server, also notify listeners 
+	 * If no new configuration returned from server, it returns old 
 	 */
-	private Config load(URL resourceUrl, String fileName, boolean notify) throws IOException {
-		File fileConfig = new File(settings.getConfigDirectory(), fileName);
-		LoadResult result = settings.getConservLoader().load(resourceUrl, settings);
-		Config config = parse(result.getContent(), result.getMimeType());
-		Config oldConfig = null;
+	private Config load(URL resourceUrl, String configName, Config configOld) throws IOException {
+		File fileConfig = new File(settings.getConfigDirectory(), configName);
+		Date lastModified = configOld != null ? configOld.getCreatedAt() : null;
+		LoadResult result = settings.getConservLoader().load(resourceUrl, settings, lastModified);
+		if (result.getHttpCode() == HttpURLConnection.HTTP_NOT_MODIFIED) {
+			return configOld; //Leave now
+		}
+
+		Config configNew = parse(result.getContent(), result.getMimeType());
 		if (settings.getConfigMemoryCaching()) {
-			oldConfig = configCache.get(fileName);
-			configCache.put(fileName, config);
+			configCache.put(configName, configNew);
 		}
 		if (settings.getConfigFileCaching()) {
-			//load old only if not taken from memory
-			if (oldConfig == null && fileConfig.exists()) {
-				try {
-					oldConfig = load(fileConfig);
-				} catch (Exception x) {
-					logger.warn("Failed to load previous config from " + fileName, x);
-				}
-			}
 			//save always new version (even when no changes exist)
 			save(fileConfig, result.getContent());
 		}
-		if (notify && this.listeners != null && oldConfig != null
-				&& !oldConfig.getCreatedAt().equals(config.getCreatedAt())) {
-			checkChangesAndNotifyListeners(oldConfig, config);
-		}
-		return config;
-	}
-
-	private void checkChangesAndNotifyListeners(Config oldConfig, Config newConfig) {
-		//check for changed and removed values
-		for (Property oldProperty : oldConfig.getProperties()) {
-			Property newProperty = newConfig.getProperty(oldProperty.getName());
-			if (newProperty == null) {
-				for (PropertyChangeListener listener : listeners) {
-					try {
-						listener.propertyRemoved(oldProperty);
-					} catch (Exception x) {
-						logger.error("Property change listener notification failed", x);
-					}
-				}
-			} else if (!newProperty.getValue().equals(oldProperty.getValue())) {
-				for (PropertyChangeListener listener : listeners) {
-					try {
-						listener.propertyChanged(oldProperty, newProperty);
-					} catch (Exception x) {
-						logger.error("Property change listener notification failed", x);
-					}
-				}
-			}
-		}
-		//check for added values only (changed values are already checked)
-		for (Property newProperty : newConfig.getProperties()) {
-			Property oldProperty = newConfig.getProperty(newProperty.getName());
-			if (oldProperty == null) {
-				for (PropertyChangeListener listener : listeners) {
-					try {
-						listener.propertyAdded(newProperty);
-					} catch (Exception x) {
-						logger.error("Property change listener notification failed", x);
-					}
-				}
-			}
-		}
-
+		return configNew;
 	}
 
 	private Config load(File file) throws Exception {
@@ -234,16 +211,59 @@ public class ConservClient {
 	}
 
 	private Config parse(String content, String mimeType) throws IOException {
+		//XXX kind of hackish...
+		//if (Format.PLAIN.getMimeType().equals(mimeType)) {
+		//	return new JavaPropsParser().parse(new StringReader(content));
+		//}
+
 		ConfigParser parser = settings.getConfigParser();
 		Format format = parser.getFormat();
 		if (!mimeType.equals(format.getMimeType())) {
-			throw new IllegalStateException("Wrong mime type " + mimeType + " for " + parser.getFormat());
+			throw new ConservException("Wrong mime type " + mimeType + " for parser " + parser.getFormat());
 		} else {
 			char fchar = getFirstCharacter(content);
 			if (!format.supports(fchar)) {
-				throw new IllegalStateException("Content starts with invalid character " + fchar + " for " + parser.getFormat());
+				throw new ConservException("Content starts with invalid character " + fchar + " for " + parser.getFormat());
 			} else {
 				return parser.parse(new StringReader(content));
+			}
+		}
+
+	}
+
+	private void checkChangesAndNotifyListeners(Config oldConfig, Config newConfig) {
+		//check for changed and removed values
+		for (Property oldProperty : oldConfig.getProperties()) {
+			Property newProperty = newConfig.getProperty(oldProperty.getName());
+			if (newProperty == null) {
+				for (PropertyChangeListener listener : listeners) {
+					try {
+						listener.propertyRemoved(oldProperty);
+					} catch (Exception x) {
+						logger.error("Property change listener notification failed", x);
+					}
+				}
+			} else if (!newProperty.getValue().equals(oldProperty.getValue())) {
+				for (PropertyChangeListener listener : listeners) {
+					try {
+						listener.propertyChanged(oldProperty, newProperty);
+					} catch (Exception x) {
+						logger.error("Property change listener notification failed", x);
+					}
+				}
+			}
+		}
+		//check for added values only (changed values are already checked)
+		for (Property newProperty : newConfig.getProperties()) {
+			Property oldProperty = newConfig.getProperty(newProperty.getName());
+			if (oldProperty == null) {
+				for (PropertyChangeListener listener : listeners) {
+					try {
+						listener.propertyAdded(newProperty);
+					} catch (Exception x) {
+						logger.error("Property change listener notification failed", x);
+					}
+				}
 			}
 		}
 

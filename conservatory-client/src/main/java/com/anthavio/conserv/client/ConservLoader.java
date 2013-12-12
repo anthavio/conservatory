@@ -2,6 +2,7 @@ package com.anthavio.conserv.client;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Date;
 
 /**
  * 
@@ -10,9 +11,11 @@ import java.net.URL;
  */
 public interface ConservLoader {
 
-	public LoadResult load(URL url, ClientSettings settings) throws IOException;
+	public LoadResult load(URL url, ClientSettings settings, Date lastModified) throws IOException;
 
 	public static class LoadResult {
+
+		private int httpCode;
 
 		private String mimeType;
 
@@ -20,10 +23,15 @@ public interface ConservLoader {
 
 		private String content;
 
-		public LoadResult(String mimeType, String charset, String content) {
+		public LoadResult(int httpCode, String mimeType, String charset, String content) {
+			this.httpCode = httpCode;
 			this.mimeType = mimeType;
 			this.charset = charset;
 			this.content = content;
+		}
+
+		public int getHttpCode() {
+			return httpCode;
 		}
 
 		public String getMimeType() {

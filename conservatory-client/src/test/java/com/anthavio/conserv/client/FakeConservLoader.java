@@ -1,15 +1,12 @@
 package com.anthavio.conserv.client;
 
 import java.io.IOException;
-import java.net.URI;
+import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import com.anthavio.conserv.client.ConfigParser.Format;
 import com.anthavio.conserv.model.Config;
-import com.anthavio.conserv.model.Property;
 
 /**
  * To simplify client tests without config server
@@ -32,17 +29,12 @@ public class FakeConservLoader implements ConservLoader {
 	private RuntimeException exception;
 
 	public FakeConservLoader() {
-		List<Property> properties = new ArrayList<Property>();
-		properties.add(new Property("string.property", "Some value"));
-		properties.add(new Property("integer.property", 132456789));
-		properties.add(new Property("date.property", new Date()));
-		properties.add(new Property("url.property", URI.create("http://test-www.example.com:8080/zxzxzx")));
-		this.config = new Config("example", "test", new Date(), properties);
+		this.config = TestData.getDefaultConfig();
 		this.format = Format.XML;
 	}
 
 	@Override
-	public LoadResult load(URL url, ClientSettings settings) throws IOException {
+	public LoadResult load(URL url, ClientSettings settings, Date lastModified) throws IOException {
 		if (exception != null) {
 			throw exception;
 		}
@@ -55,7 +47,7 @@ public class FakeConservLoader implements ConservLoader {
 			throw new IllegalStateException("What?!?! " + format);
 		}
 
-		return new LoadResult(format.getMimeType(), charset, content);
+		return new LoadResult(HttpURLConnection.HTTP_OK, format.getMimeType(), charset, content);
 	}
 
 	public void setResponseConfig(Config config, Format format) {

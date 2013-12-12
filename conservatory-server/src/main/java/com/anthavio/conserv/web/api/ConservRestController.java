@@ -1,9 +1,11 @@
 package com.anthavio.conserv.web.api;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
 
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import com.anthavio.conserv.dbmodel.ConfigDocument;
+import com.anthavio.conserv.dbmodel.ConfigResource.ConfigResourceType;
 import com.anthavio.conserv.model.Config;
 import com.anthavio.conserv.model.Property;
 import com.anthavio.conserv.services.ConservService;
@@ -67,12 +70,33 @@ public class ConservRestController {
 		return irsdax.getMessage();
 	}
 
-	@RequestMapping(value = "config/{envCodeName}/{appCodeName}/{resourceCodeName}", method = RequestMethod.GET, produces = "text/plain")
+	/**
+	 * Config file as is stored - text/plain
+	 */
+	@RequestMapping(value = "config/{envCodeName}/{appCodeName}/{resourceCodeName}", method = RequestMethod.GET)
 	public @ResponseBody
 	String getConfigurationPlain(@PathVariable String envCodeName, @PathVariable String appCodeName,
-			@PathVariable String resourceCodeName) throws IOException {
+			@PathVariable String resourceCodeName, HttpServletResponse response) throws IOException {
+
+		//return new ResponseEntity<String>(body, responseHeaders, status);
 
 		ConfigDocument document = service.loadAtOnce(envCodeName, appCodeName, resourceCodeName);
+
+		ConfigResourceType type = document.getConfigDeploy().getConfigResource().getType();
+		//response.setContentType(type.getMimeType() + ";charset=utf-8");
+		//response.setCharacterEncoding("utf-8");
+
+		if (type == ConfigResourceType.PROPERTIES) {
+			//metadata properties
+			StringBuilder sb = new StringBuilder(document.getValue());
+			sb.append('\n');
+			sb.append("conserv.environment = ").append(envCodeName).append('\n');
+			sb.append("conserv.application = ").append(appCodeName).append('\n');
+			sb.append("conserv.resource = ").append(resourceCodeName).append('\n');
+			String createdAt = new SimpleDateFormat(Property.DATE_TIME_FORMAT).format(document.getCreatedAt());
+			sb.append("conserv.createdAt = ").append(createdAt).append('\n');
+		}
+		response.setDateHeader("Last-Modified", document.getCreatedAt().getTime());
 		return document.getValue();
 	}
 
@@ -82,9 +106,13 @@ public class ConservRestController {
 			@PathVariable String resourceCodeName) {
 
 		ConfigDocument document = service.loadAtOnce(envCodeName, appCodeName, resourceCodeName);
+		ConfigResourceType type = document.getConfigDeploy().getConfigResource().getType();
+		if (type != ConfigResourceType.PROPERTIES) {
+			throw new IllegalStateException("Illegal ConfigResourceType " + type);
+		}
 		List<Property> properties = PropertiesConverter.instance().convertForClient(document.getValue());
 
-		return new Config(appCodeName, envCodeName, document.getCreatedAt(), properties);
+		return new Config(envCodeName, appCodeName, resourceCodeName, document.getCreatedAt(), properties);
 	}
 
 	@RequestMapping(value = "config/{envCodeName}/{appCodeName}/{resourceCodeName}", method = RequestMethod.GET, headers = "Accept=application/xml")

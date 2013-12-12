@@ -13,7 +13,14 @@ import com.anthavio.conserv.model.Config;
 public interface ConfigParser {
 
 	public static enum Format {
-		XML('<', "application/xml"), JSON('{', "application/json");
+		XML('<', "application/xml"), //
+		JSON('{', "application/json"), //
+		PLAIN(' ', "text/plain") {
+			@Override
+			public boolean supports(char fchar) {
+				return true;
+			}
+		};
 
 		private final char fchar;
 

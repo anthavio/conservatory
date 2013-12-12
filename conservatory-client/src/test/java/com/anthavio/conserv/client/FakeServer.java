@@ -1,11 +1,8 @@
 package com.anthavio.conserv.client;
 
 import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
+import java.net.HttpURLConnection;
 import java.util.Collections;
-import java.util.Date;
-import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -22,7 +19,6 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.security.Password;
 
-import com.anthavio.conserv.client.ConfigParser.Format;
 import com.anthavio.conserv.model.Config;
 import com.anthavio.conserv.model.Property;
 
@@ -33,27 +29,22 @@ import com.anthavio.conserv.model.Property;
  */
 public class FakeServer extends HttpServlet {
 
+	private static final long serialVersionUID = 1L;
+
 	private Server jetty;
 
 	private JaxbConfigParser jaxb = new JaxbConfigParser();
 
 	private Jackson2ConfigParser json = new Jackson2ConfigParser();
 
-	private Format format;
+	private Config config = TestData.getDefaultConfig();
 
-	private Config config;
+	//private Format format = Format.PLAIN;
 
 	private String errorMessage;
 
 	public FakeServer(boolean authon) {
 		jetty = setup(authon);
-		List<Property> properties = new ArrayList<Property>();
-		properties.add(new Property("string.property", "Some value"));
-		properties.add(new Property("integer.property", 132456789));
-		properties.add(new Property("date.property", new Date()));
-		properties.add(new Property("url.property", URI.create("http://test-www.example.com:8080/zxzxzx")));
-		this.config = new Config("example", "test", new Date(), properties);
-		this.format = Format.XML;
 	}
 
 	@Override
@@ -63,25 +54,72 @@ public class FakeServer extends HttpServlet {
 			return;
 		}
 
+		long ifModifiedSince = request.getDateHeader("If-Modified-Since");
+		if (ifModifiedSince == config.getCreatedAt().getTime()) {
+			//dtModified = new Date(ifModifiedSince);
+			//config.getCreatedAt().getTime()==ifModifiedSince;
+			response.sendError(HttpURLConnection.HTTP_NOT_MODIFIED);
+			if (true) {
+				return;
+			}
+		}
+
+		String accept = request.getHeader("Accept");
+		if (accept == null) {
+			accept = "text/plain";
+		}
+
 		response.setStatus(HttpServletResponse.SC_OK);
-		response.setContentType(format.getMimeType() + ";charset=utf-8");
+		response.setContentType(accept + ";charset=utf-8");
+		System.out.println("FakeServer - returning config as " + accept);
+
 		String content;
-		if (format == Format.JSON) {
+		if (accept.indexOf("json") != -1) {
 			content = json.marshall(config);
-		} else if (format == Format.XML) {
+		} else if (accept.indexOf("xml") != -1) {
 			content = jaxb.marshall(config);
 		} else {
-			throw new IllegalStateException("What?!?! " + format);
+			StringBuilder sb = new StringBuilder();
+			for (Property p : config.getProperties()) {
+				sb.append(p.getName() + " = " + p.getValue()).append('\n');
+			}
+			content = sb.toString();
+			//throw new IllegalStateException("What?!?! " + format);
 		}
 		response.getWriter().println(content);
 	}
 
-	public void setResponseConfig(Config config, Format format) {
-		this.format = format;
+	/*
+		public void setResponseConfig(Config config, Format format) {
+			this.format = format;
+			this.config = config;
+		}
+
+		public Format getFormat() {
+			return format;
+		}
+
+		public void setFormat(Format format) {
+			this.format = format;
+		}
+	*/
+	public Config getConfig() {
+		return config;
+	}
+
+	public void setConfig(Config config) {
 		this.config = config;
 	}
 
-	private Server setup(boolean authon) {
+	public String getErrorMessage() {
+		return errorMessage;
+	}
+
+	public void setErrorMessage(String errorMessage) {
+		this.errorMessage = errorMessage;
+	}
+
+	private Server setup(boolean authentication) {
 		// http://www.eclipse.org/jetty/documentation/current/embedded-examples.html
 		// https://wiki.eclipse.org/Jetty/Tutorial/Embedding_Jetty
 		Server server = new Server(0);
@@ -108,7 +146,7 @@ public class FakeServer extends HttpServlet {
 		handler.addServletWithMapping(new ServletHolder(this), "/*");
 		server.setHandler(handler);
 
-		if (authon) {
+		if (authentication) {
 			security.setHandler(handler); //chain the shit...
 			server.setHandler(security);
 		} else {

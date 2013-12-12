@@ -42,16 +42,28 @@ public class Property implements Serializable {
 		//JAXB
 	}
 
-	public Property(String name, String string) {
-		this(name, ValueType.STRING, string, null);
+	public Property(String name, String value) {
+		this(name, ValueType.STRING, value, null);
+	}
+
+	public Property(String name, String value, String comment) {
+		this(name, ValueType.STRING, value, comment);
 	}
 
 	public Property(String name, Integer integer) {
-		this(name, ValueType.INTEGER, integer != null ? String.valueOf(integer) : null, null);
+		this(name, integer, null);
+	}
+
+	public Property(String name, Integer integer, String comment) {
+		this(name, ValueType.INTEGER, integer != null ? String.valueOf(integer) : null, comment);
 	}
 
 	public Property(String name, Date date) {
-		this(name, ValueType.DATE, date != null ? new SimpleDateFormat(DATE_FORMAT).format(date) : null, null);
+		this(name, date, null);
+	}
+
+	public Property(String name, Date date, String comment) {
+		this(name, ValueType.DATE, date != null ? new SimpleDateFormat(DATE_FORMAT).format(date) : null, comment);
 	}
 
 	public Property(String name, ValueType type, Date date) {

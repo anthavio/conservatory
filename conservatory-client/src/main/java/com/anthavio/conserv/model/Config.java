@@ -14,9 +14,11 @@ public class Config implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
+	private String environment;
+
 	private String aplication;
 
-	private String environment;
+	private String resource;
 
 	private Date createdAt;
 
@@ -26,9 +28,10 @@ public class Config implements Serializable {
 		//JAXB
 	}
 
-	public Config(String aplication, String environment, Date createdAt, List<Property> properties) {
-		this.aplication = aplication;
+	public Config(String environment, String aplication, String resource, Date createdAt, List<Property> properties) {
 		this.environment = environment;
+		this.aplication = aplication;
+		this.resource = resource;
 		this.createdAt = createdAt;
 		this.properties = properties;
 	}
@@ -42,20 +45,28 @@ public class Config implements Serializable {
 		return null;
 	}
 
-	public String getAplication() {
-		return aplication;
-	}
-
 	public String getEnvironment() {
 		return environment;
 	}
 
-	public List<Property> getProperties() {
-		return properties;
+	public void setEnvironment(String environment) {
+		this.environment = environment;
+	}
+
+	public String getAplication() {
+		return aplication;
 	}
 
 	public void setAplication(String aplication) {
 		this.aplication = aplication;
+	}
+
+	public String getResource() {
+		return resource;
+	}
+
+	public void setResource(String resource) {
+		this.resource = resource;
 	}
 
 	public Date getCreatedAt() {
@@ -66,8 +77,8 @@ public class Config implements Serializable {
 		this.createdAt = createdAt;
 	}
 
-	public void setEnvironment(String environment) {
-		this.environment = environment;
+	public List<Property> getProperties() {
+		return properties;
 	}
 
 	public void setProperties(List<Property> properties) {

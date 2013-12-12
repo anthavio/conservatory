@@ -2,14 +2,12 @@ package com.anthavio.conserv.web.api;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
-import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -67,7 +65,7 @@ public class MvcSpringConfig extends WebMvcConfigurerAdapter {
 		converters.add(new MappingJackson2HttpMessageConverter());
 
 		StringHttpMessageConverter stringConverter = new StringHttpMessageConverter(Charset.forName("UTF-8"));
-		stringConverter.setSupportedMediaTypes(Arrays.asList(MediaType.TEXT_PLAIN));
+		//stringConverter.setSupportedMediaTypes(Arrays.asList(MediaType.TEXT_PLAIN));
 		converters.add(stringConverter);
 		//org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 		//org.springframework.http.converter.xml.MarshallingHttpMessageConverter

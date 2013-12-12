@@ -120,11 +120,11 @@ public class ConservService {
 		//combination of leftJoin fetch and distinct is the key here
 		//fetch caused that multiple result items are returned
 		//distinct prunes duplicities
-		List<ConfigDeploy> deploys = jpq.from(qDeploy).innerJoin(qDeploy.configResource(), qResource)
-				.innerJoin(qResource.application(), qApp).innerJoin(qDeploy.environment(), qEnv).where(bEnv, bApp, bRes)
+		List<ConfigDeploy> deploys = jpq.from(qDeploy).innerJoin(qDeploy.configResource(), qResource).fetch()
+				.innerJoin(qResource.application(), qApp).fetch().innerJoin(qDeploy.environment(), qEnv).fetch()
+				.where(bEnv, bApp, bRes)
 				/*.leftJoin(qDeploy.properties, qProperty).fetch().distinct().*/.list(qDeploy);
 
-		//System.out.println(targets);
 		if (deploys.size() == 0) {
 			throw new EmptyResultDataAccessException("Configuration not found for Environment '" + envCodeName
 					+ "' Application '" + appCodeName + "' Resource '" + resourceCodeName + "'", 1);
