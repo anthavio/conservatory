@@ -90,7 +90,7 @@ public class ConservPropertyPlaceholderConfigurer extends PropertyPlaceholderCon
 		if (this.paths != null) {
 			for (String location : this.paths) {
 				if (logger.isInfoEnabled()) {
-					logger.info("Loading properties from " + location);
+					logger.info("Loading properties from " + client.getServerUrl() + location);
 				}
 				try {
 					String[] split = location.split("/");

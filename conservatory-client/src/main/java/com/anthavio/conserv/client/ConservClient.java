@@ -57,6 +57,10 @@ public class ConservClient {
 		this(new ClientSettings(serverUrl));
 	}
 
+	public URL getServerUrl() {
+		return settings.getServerUrl();
+	}
+
 	public void addListener(PropertyChangeListener listener) {
 		if (listeners == null) {
 			listeners = new ArrayList<PropertyChangeListener>();
@@ -86,7 +90,7 @@ public class ConservClient {
 			//may happen when environment/application/resource contains something illegal
 			resourceUrl = new URL(fullUrl);
 		} catch (MalformedURLException mux) {
-			throw new ConservException("Malformed resource url: " + configPath, mux);
+			throw new ConservLoadException("Malformed resource url: " + configPath, mux);
 		}
 
 		String configName = configPath.replace('/', '-') + "." + settings.getConfigParser().getFormat();
@@ -137,7 +141,7 @@ public class ConservClient {
 				logger.error("Configuration server load failed. Returning cached configuration", x);
 				return configOld;
 			} else {
-				throw new ConservException("Configuration server load failed", x);
+				throw new ConservLoadException("Configuration server load failed", x);
 			}
 		}
 	}
@@ -219,11 +223,11 @@ public class ConservClient {
 		ConfigParser parser = settings.getConfigParser();
 		Format format = parser.getFormat();
 		if (!mimeType.equals(format.getMimeType())) {
-			throw new ConservException("Wrong mime type " + mimeType + " for parser " + parser.getFormat());
+			throw new ConservLoadException("Wrong mime type " + mimeType + " for parser " + parser.getFormat());
 		} else {
 			char fchar = getFirstCharacter(content);
 			if (!format.supports(fchar)) {
-				throw new ConservException("Content starts with invalid character " + fchar + " for " + parser.getFormat());
+				throw new ConservLoadException("Content starts with invalid character " + fchar + " for " + parser.getFormat());
 			} else {
 				return parser.parse(new StringReader(content));
 			}
@@ -281,4 +285,5 @@ public class ConservClient {
 		}
 		return ' ';
 	}
+
 }

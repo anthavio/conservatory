@@ -2,6 +2,10 @@ package com.anthavio.conserv.client;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Properties;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -10,17 +14,19 @@ import java.net.URL;
  */
 public class ClientSettings {
 
+	private static final Logger logger = LoggerFactory.getLogger(ClientSettings.class);
+
 	private URL serverUrl;
 
 	private String username; //BASIC authentication credentials 
 
 	private String password;
 
-	private boolean followRedirects = true; // 300 response behaviour
-
 	private int connectTimeout = 2000;
 
 	private int readTimeout = 5000;
+
+	private boolean followRedirects = true; // 300 response behaviour
 
 	private ConfigParser configParser = ConfigParserFactory.build();
 
@@ -34,6 +40,43 @@ public class ClientSettings {
 
 	//where to keep configuration files
 	private String configDirectory = System.getProperty("java.io.tmpdir");
+
+	public ClientSettings(Properties properties) {
+		this(properties.getProperty("conserv.url"));
+		this.username = properties.getProperty("conserv.username");
+		this.password = properties.getProperty("conserv.password");
+
+		this.connectTimeout = getOptInt(properties, "conserv.connectTimeout", connectTimeout);
+		this.readTimeout = getOptInt(properties, "conserv.readTimeout", connectTimeout);
+		this.followRedirects = getOptBoolean(properties, "conserv.followRedirects", followRedirects);
+
+		this.configMemoryCaching = getOptBoolean(properties, "conserv.configMemoryCaching", configMemoryCaching);
+		this.configFileCaching = getOptBoolean(properties, "conserv.configFileCaching", configFileCaching);
+		this.configDirectory = properties.getProperty("conserv.configDirectory", configDirectory);
+	}
+
+	private int getOptInt(Properties proprties, String name, int defval) {
+		String string = proprties.getProperty(name);
+		if (string != null && string.length() != 0) {
+			try {
+				return Integer.parseInt(string);
+			} catch (Exception x) {
+				logger.warn("Invalid value for int '" + string + "' Keepind default value:" + defval);
+				return defval;
+			}
+		} else {
+			return defval;
+		}
+	}
+
+	private boolean getOptBoolean(Properties proprties, String name, boolean defval) {
+		String string = proprties.getProperty(name);
+		if (string != null && string.length() != 0) {
+			return Boolean.parseBoolean(string);
+		} else {
+			return defval;
+		}
+	}
 
 	public ClientSettings(String serverUrl) {
 		try {

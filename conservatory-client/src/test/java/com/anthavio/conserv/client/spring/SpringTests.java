@@ -2,8 +2,7 @@ package com.anthavio.conserv.client.spring;
 
 import java.io.IOException;
 import java.net.URL;
-
-import javax.annotation.PostConstruct;
+import java.net.URLConnection;
 
 import org.fest.assertions.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +12,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.UrlResource;
 import org.testng.annotations.BeforeClass;
@@ -32,12 +32,17 @@ import com.anthavio.conserv.client.TestData;
  */
 public class SpringTests {
 
+	private static final String SP_HTTP_PORT = "http.port";
+
+	private static final String SP_CONSERV_URL = "conserv.url";
+
 	private FakeServer server = new FakeServer(false);
 
 	@BeforeClass
 	public void beforeClass() {
 		server.start();
-		System.setProperty("http.port", server.getHttpPort() + "");
+		System.setProperty(SP_HTTP_PORT, server.getHttpPort() + "");
+		System.setProperty(SP_CONSERV_URL, "http://localhost:" + server.getHttpPort() + "/conserv/test/example/properties");
 	}
 
 	@Test
@@ -45,13 +50,17 @@ public class SpringTests {
 
 		//server.setFormat(Format.XML);
 
-		ApplicationContext ctx = new AnnotationConfigApplicationContext(Spring31Custom.class);
+		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+		ctx.register(Spring31Custom.class);
+		ConservContextInitializer initializer = new ConservContextInitializer();
+		initializer.initialize(ctx);
+		ctx.refresh();
 		Spring31Custom config = ctx.getBean(Spring31Custom.class);
 
-		Assertions.assertThat(config.getUrlProperty()).isEqualTo(
+		Assertions.assertThat(config.getUrlPropertyValue()).isEqualTo(
 				TestData.getDefaultConfig().getProperty("url.property").asUrl());
 
-		Assertions.assertThat(config.getStringProperty()).isEqualTo(
+		Assertions.assertThat(config.getStringPropertyValue()).isEqualTo(
 				TestData.getDefaultConfig().getProperty("string.property").asString());
 
 		Assertions.assertThat(config.getEnvProperty("url.property")).isEqualTo(
@@ -62,7 +71,7 @@ public class SpringTests {
 
 	}
 
-	@Test
+	//@Test
 	public void testSpring31Basic() throws Exception {
 
 		//server.setFormat(Format.PLAIN);
@@ -70,20 +79,20 @@ public class SpringTests {
 		ApplicationContext ctx = new AnnotationConfigApplicationContext(Spring31Basic.class);
 		Spring31Basic config = ctx.getBean(Spring31Basic.class);
 
-		Assertions.assertThat(config.getUrlProperty()).isEqualTo(
+		Assertions.assertThat(config.getUrlPropertyValue()).isEqualTo(
 				TestData.getDefaultConfig().getProperty("url.property").asUrl());
 
-		Assertions.assertThat(config.getStringProperty()).isEqualTo(
+		Assertions.assertThat(config.getStringPropertyValue()).isEqualTo(
 				TestData.getDefaultConfig().getProperty("string.property").asString());
 
 		//server.setFormat(Format.XML);
 
-		Assertions.assertThat(config.getEvnProperty("url.property")).isEqualTo(
+		Assertions.assertThat(config.getEnvProperty("url.property")).isEqualTo(
 				TestData.getDefaultConfig().getProperty("url.property").asString());
 
 	}
 
-	@Test
+	//@Test
 	public void testSpring30Custom() throws Exception {
 
 		//server.setFormat(Format.XML);
@@ -91,14 +100,15 @@ public class SpringTests {
 		ApplicationContext ctx = new AnnotationConfigApplicationContext(Spring30Custom.class);
 		Spring30Custom config = ctx.getBean(Spring30Custom.class);
 
-		Assertions.assertThat(config.getUrlProperty()).isEqualTo(
+		Assertions.assertThat(config.getUrlPropertyValue()).isEqualTo(
 				TestData.getDefaultConfig().getProperty("url.property").asUrl());
 
-		Assertions.assertThat(config.getStringProperty()).isEqualTo(
+		Assertions.assertThat(config.getStringPropertyValue()).isEqualTo(
 				TestData.getDefaultConfig().getProperty("string.property").asString());
+
 	}
 
-	@Test
+	//@Test
 	public void testSpring30Basic() throws Exception {
 
 		//server.setFormat(Format.PLAIN);
@@ -106,11 +116,29 @@ public class SpringTests {
 		ApplicationContext ctx = new AnnotationConfigApplicationContext(Spring30Basic.class);
 		Spring30Basic config = ctx.getBean(Spring30Basic.class);
 
-		Assertions.assertThat(config.getUrlProperty()).isEqualTo(
+		Assertions.assertThat(config.getUrlPropertyValue()).isEqualTo(
 				TestData.getDefaultConfig().getProperty("url.property").asUrl());
 
-		Assertions.assertThat(config.getStringProperty()).isEqualTo(
+		Assertions.assertThat(config.getStringPropertyValue()).isEqualTo(
 				TestData.getDefaultConfig().getProperty("string.property").asString());
+	}
+
+	public static class Abstract31Config extends AbstractConfig {
+
+		@Autowired
+		private Environment environment;
+
+		public String getEnvProperty(String name) {
+			return environment.getProperty(name);
+		}
+
+		/**
+		 * Value will be provided via Environment and @PropertySource
+		 */
+		@Bean
+		public URLConnection URLConnectionEnv() throws IOException {
+			return new URL(environment.getProperty("url.property")).openConnection();
+		}
 	}
 
 	@Configuration
@@ -122,17 +150,20 @@ public class SpringTests {
 		@Value("${url.property}")
 		private URL urlProperty;
 
-		public String getStringProperty() {
+		public String getStringPropertyValue() {
 			return stringProperty;
 		}
 
-		public URL getUrlProperty() {
+		public URL getUrlPropertyValue() {
 			return urlProperty;
 		}
 
-		protected static String getConservUrl() {
-			int httpPort = Integer.parseInt(System.getProperty("http.port"));
-			return "http://localhost:" + httpPort + "/conserv";
+		/**
+		 * @Value will be provided via PropertyPlaceholder...Configurer
+		 */
+		@Bean
+		public URLConnection getURLConnection(@Value("${url.property}") String urlProperty) throws IOException {
+			return new URL(urlProperty).openConnection();
 		}
 
 		@Bean
@@ -142,23 +173,20 @@ public class SpringTests {
 			return cc;
 		}
 
+		protected static String getConservUrl() {
+			//jetty http port is dynamicaly allocated
+			String url = System.getProperty(SP_CONSERV_URL);
+			return url;
+		}
+
 	}
 
-	public static class Spring31Custom extends AbstractConfig {
+	//We will not use @PropertySource, but ConservContextInitializer 
+	public static class Spring31Custom extends Abstract31Config {
 
-		@PostConstruct
-		public void postConstruct() {
-			ConservPropertiesSource source = new ConservPropertiesSource(ConservClient(), "test", "example", "properties");
-			environment.getPropertySources().addFirst(source);
-		}
-
-		@Autowired
-		private ConfigurableEnvironment environment;
-
-		public String getEnvProperty(String name) {
-			return environment.getProperty(name);
-		}
-
+		/**
+		 *  Custom Spring 2.0+ ConservPropertyPlaceholderConfigurer - fills @Value(${"some.property"})
+		 */
 		@Bean
 		public static ConservPropertyPlaceholderConfigurer placeholderConfigurer() throws IOException {
 			ConservClient client = ConservClient();
@@ -169,24 +197,12 @@ public class SpringTests {
 
 	}
 
-	//@PropertySource("http://www.google.com/xzncbzmnxcb")
-	public static class Spring31Basic extends AbstractConfig {
-
-		@PostConstruct
-		public void postConstruct() {
-			ConservPropertiesSource source = new ConservPropertiesSource(ConservClient(), "test", "example", "properties");
-			environment.getPropertySources().addFirst(source);
-		}
-
-		@Autowired
-		private ConfigurableEnvironment environment;
-
-		public String getEvnProperty(String name) {
-			return environment.getProperty(name);
-		}
+	//System Property - no authentication and caching
+	@PropertySource("${" + SP_CONSERV_URL + "}")
+	public static class Spring31Basic extends Abstract31Config {
 
 		/**
-		 * Standard Spring 3.1 PropertySourcesPlaceholderConfigurer - feeds @Value
+		 * Standard Spring 3.1+ PropertySourcesPlaceholderConfigurer - fills @Value(${"some.property"})
 		 */
 		@Bean
 		public static PropertySourcesPlaceholderConfigurer sourcePlaceholderConfigurer() throws IOException {
@@ -198,15 +214,9 @@ public class SpringTests {
 
 	public static class Spring30Custom extends AbstractConfig {
 
-		@Bean
-		public static ConservClient ConservClient() {
-			ClientSettings settings = new ClientSettings(getConservUrl());
-			ConservClient cc = new ConservClient(settings);
-			return cc;
-		}
-
 		/**
-		 * Custom Spring 2.0-3.0 ConservPropertyPlaceholderConfigurer - feeds @Value
+		 * Custom Spring 2.0+ ConservPropertyPlaceholderConfigurer - fills @Value(${"some.property"})
+		 * Using ConservClient internally - Caching and authentication can be used
 		 */
 		@Bean
 		public static ConservPropertyPlaceholderConfigurer placeholderConfigurer() throws IOException {
@@ -221,7 +231,9 @@ public class SpringTests {
 	public static class Spring30Basic extends AbstractConfig {
 
 		/**
-		 * Standard Spring 2.0-3.0 PropertyPlaceholderConfigurer - feeds @Value
+		 * Standard Spring 2.0+ PropertyPlaceholderConfigurer - fills @Value(${"some.property"})
+		 * Loads properties in text/plain format direcly using raw java HttpURLConnection  
+		 * Caching and authentication cannot happen since ConservClient is NOT involved  
 		 */
 		@Bean
 		public static PropertyPlaceholderConfigurer placeholderConfigurer() throws IOException {

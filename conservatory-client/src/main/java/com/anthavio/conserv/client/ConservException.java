@@ -5,7 +5,7 @@ package com.anthavio.conserv.client;
  * @author martin.vanek
  *
  */
-public class ConservException extends RuntimeException {
+public abstract class ConservException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
