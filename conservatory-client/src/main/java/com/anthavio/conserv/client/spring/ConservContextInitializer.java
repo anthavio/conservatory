@@ -1,14 +1,10 @@
 package com.anthavio.conserv.client.spring;
 
-import java.util.Properties;
-
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import com.anthavio.conserv.client.ClientSettings;
-import com.anthavio.conserv.client.ConservClient;
-import com.anthavio.conserv.client.ConservInitException;
-import com.anthavio.discovery.DiscoveryBuilder;
+import com.anthavio.conserv.client.ConservResource;
 
 /**
  * In weapps, it should be used like here - https://gist.github.com/rponte/3989915
@@ -23,63 +19,34 @@ public class ConservContextInitializer implements ApplicationContextInitializer<
 	@Override
 	public void initialize(ConfigurableApplicationContext context) {
 
-		//ConservClient client = getFromSpringContext(context);
-
-		Properties properties = new DiscoveryBuilder().system("conserv.url").filepath("conserv.file")
-				.classpath("/conserv.properties").discover();
-		if (properties == null) {
-			throw new ConservInitException("Conserv client configuration not discovered");
+		ConservResource resource;
+		try {
+			resource = context.getBean(ConservResource.class);
+		} catch (NoSuchBeanDefinitionException nsbx) {
+			resource = null;
 		}
-		ClientSettings settings = new ClientSettings(properties);
-		ConservClient client = new ConservClient(settings);
-		String path = settings.getServerUrl().getPath();
-		String[] parts = path.split("/");
-
-		String environment = properties.getProperty("conserv.environment");
-		String application;
-		String resource;
-		if (environment != null) {
-			environment = getRequired(properties, "conserv.environment");
-			application = getRequired(properties, "conserv.application");
-			resource = getRequired(properties, "conserv.resource");
-		} else {
-			//try to get from URL 
-			if (parts.length >= 3) {
-				environment = parts[parts.length - 3];
-				application = parts[parts.length - 2];
-				resource = parts[parts.length - 1];
-			} else {
-				throw new ConservInitException("Missing configuration specification in properties or url");
-			}
+		if (resource == null) {
+			resource = ConservResource.Default();
 		}
 
-		ConservPropertiesSource source = new ConservPropertiesSource(client, environment, application, resource);
+		ConservPropertiesSource source = new ConservPropertiesSource(resource);
 		context.getEnvironment().getPropertySources().addFirst(source);
-	}
-
-	private String getRequired(Properties properties, String name) {
-		String value = properties.getProperty(name);
-		if (value == null || value.length() == 0) {
-			throw new ConservInitException("Required Conserv property " + name + " not found");
-		} else {
-			return value;
-		}
 	}
 
 	/**
 	 * Get ConservClient from Spring context
 	 * 
 	 * @return ConservClient instance or null
-	 */
-	private ConservClient getFromSpringContext(ConfigurableApplicationContext context) {
-		ConservClient client = context.getBean(ConservClient.class);
-		if (client == null) {
+	 
+	private ConservResource getFromSpringContext(ConfigurableApplicationContext context) {
+		ConservResource resource = context.getBean(ConservResource.class);
+		if (resource == null) {
 			ClientSettings settings = context.getBean(ClientSettings.class);
 			if (settings != null) {
 				return new ConservClient(settings);
 			}
 		}
-		return client;
+		return resource;
 	}
-
+	*/
 }

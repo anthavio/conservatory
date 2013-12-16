@@ -1,8 +1,11 @@
 package com.anthavio.conserv.client.spring;
 
+import java.util.List;
+
 import org.springframework.core.env.EnumerablePropertySource;
 
-import com.anthavio.conserv.client.ConservClient;
+import com.anthavio.conserv.client.ConservResource;
+import com.anthavio.conserv.model.Config;
 import com.anthavio.conserv.model.Property;
 
 /**
@@ -16,30 +19,31 @@ import com.anthavio.conserv.model.Property;
  * http://stackoverflow.com/questions/2561947/spring-to-understand-properties-in-yaml
  *
  */
-public class ConservPropertiesSource extends EnumerablePropertySource<ConservClient> {
+public class ConservPropertiesSource extends EnumerablePropertySource<ConservResource> {
 
-	private ConservClient client;
+	private ConservResource resource;
 
-	private String environment;
-	private String application;
-	private String resource;
+	private transient Config config; //cache
 
-	public ConservPropertiesSource(ConservClient client, String environment, String application, String resource) {
-		this("conserve", client, environment, application, resource);
+	public ConservPropertiesSource(ConservResource resource) {
+		this("conserve", resource);
 	}
 
-	public ConservPropertiesSource(String name, ConservClient client, String environment, String application,
-			String resource) {
-		super(name, client);
-		this.client = client;
-		this.environment = environment;
-		this.application = application;
+	public ConservPropertiesSource(String name, ConservResource resource) {
+		super(name, resource);
 		this.resource = resource;
+	}
+
+	private Config getConfig() {
+		if (config == null) {
+			config = resource.get();
+		}
+		return config;
 	}
 
 	@Override
 	public Object getProperty(String name) {
-		Property property = client.getConfig(environment, application, resource).getProperty(name);
+		Property property = getConfig().getProperty(name);
 		if (property != null) {
 			return property.getValue();
 		} else {
@@ -49,7 +53,11 @@ public class ConservPropertiesSource extends EnumerablePropertySource<ConservCli
 
 	@Override
 	public String[] getPropertyNames() {
-		// TODO Auto-generated method stub
-		return null;
+		List<Property> properties = getConfig().getProperties();
+		String[] names = new String[properties.size()];
+		for (int i = 0; i < properties.size(); ++i) {
+			names[i] = properties.get(i).getName();
+		}
+		return names;
 	}
 }

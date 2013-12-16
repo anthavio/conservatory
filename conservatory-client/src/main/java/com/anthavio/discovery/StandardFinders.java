@@ -20,11 +20,11 @@ import com.anthavio.discovery.DiscoveryBuilder.PropertiesFinder;
  */
 public class StandardFinders {
 
-	public static class SystemFinder implements PropertiesFinder {
+	public static class SystemPropertiesFinder implements PropertiesFinder {
 
 		private final String propertyName;
 
-		public SystemFinder(String propertyName) {
+		public SystemPropertiesFinder(String propertyName) {
 			if (propertyName == null || propertyName.length() == 0) {
 				throw new IllegalArgumentException("Blank property name");
 			}
@@ -41,22 +41,27 @@ public class StandardFinders {
 			}
 		}
 
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + " " + propertyName;
+		}
+
 	}
 
-	public static class EnvironmentFinder implements PropertiesFinder {
+	public static class EnvironmentValiableFinder implements PropertiesFinder {
 
-		private final String propertyName;
+		private final String variableName;
 
-		public EnvironmentFinder(String propertyName) {
-			if (propertyName == null || propertyName.length() == 0) {
-				throw new IllegalArgumentException("Blank property name");
+		public EnvironmentValiableFinder(String variableName) {
+			if (variableName == null || variableName.length() == 0) {
+				throw new IllegalArgumentException("Blank variable name");
 			}
-			this.propertyName = propertyName;
+			this.variableName = variableName;
 		}
 
 		@Override
 		public Finding find() {
-			String property = System.getenv(propertyName);
+			String property = System.getenv(variableName);
 			if (property != null) {
 				Map<String, String> envars = System.getenv();
 				Properties properties = new Properties();
@@ -69,13 +74,19 @@ public class StandardFinders {
 			}
 		}
 
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + " " + variableName;
+		}
 	}
 
-	public static class FilepathFinder implements PropertiesFinder {
+	public static class FilesystemFinder implements PropertiesFinder {
 
 		private final String fileNameSystemProperty;
 
-		public FilepathFinder(String fileNameSystemProperty) {
+		private File file;
+
+		public FilesystemFinder(String fileNameSystemProperty) {
 			if (fileNameSystemProperty == null || fileNameSystemProperty.length() == 0) {
 				throw new IllegalArgumentException("Blank system property name");
 			}
@@ -86,7 +97,7 @@ public class StandardFinders {
 		public Finding find() {
 			String fileName = System.getProperty(fileNameSystemProperty);
 			if (fileName != null) {
-				File file = new File(fileName);
+				file = new File(fileName);
 				if (!file.exists()) {
 					throw new DiscoveryException("Invalid system property '" + fileNameSystemProperty
 							+ "'. File does not exist: " + file);
@@ -107,6 +118,11 @@ public class StandardFinders {
 			}
 		}
 
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + " " + fileNameSystemProperty + "  " + file;
+		}
+
 	}
 
 	public static class ClasspathFinder implements PropertiesFinder {
@@ -114,6 +130,8 @@ public class StandardFinders {
 		private final ClassLoader classLoader;
 
 		private final String resource;
+
+		private transient URL url;
 
 		/*
 		public ClasspathItemBuilder(String resource) {
@@ -140,7 +158,7 @@ public class StandardFinders {
 
 		@Override
 		public Finding find() {
-			URL url = classLoader.getResource(resource);
+			url = classLoader.getResource(resource);
 			if (url != null) {
 				Properties properties;
 				try {
@@ -153,11 +171,18 @@ public class StandardFinders {
 				return null;
 			}
 		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + " " + resource + " " + url;
+		}
 	}
 
 	public static class UrlFinder implements PropertiesFinder {
 
 		private final String urlSystemProperty;
+
+		private transient URL url;
 
 		public UrlFinder(String urlSystemProperty) {
 			if (urlSystemProperty == null || urlSystemProperty.length() == 0) {
@@ -171,7 +196,7 @@ public class StandardFinders {
 			String urlString = System.getProperty(urlSystemProperty);
 			if (urlString != null) {
 				try {
-					URL url = new URL(urlString);
+					url = new URL(urlString);
 					Properties properties = load(url.openStream());
 					return new Finding(url, properties);
 				} catch (IOException iox) {
@@ -180,7 +205,11 @@ public class StandardFinders {
 			} else {
 				return null;
 			}
+		}
 
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + " " + urlSystemProperty + " " + url;
 		}
 	}
 

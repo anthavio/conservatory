@@ -12,6 +12,7 @@ import org.springframework.core.io.UrlResource;
 
 import com.anthavio.conserv.client.ConservClient;
 import com.anthavio.conserv.client.ConservException;
+import com.anthavio.conserv.client.ConservResource;
 import com.anthavio.conserv.model.Config;
 import com.anthavio.conserv.model.Property;
 
@@ -23,23 +24,37 @@ import com.anthavio.conserv.model.Property;
  */
 public class ConservPropertyPlaceholderConfigurer extends PropertyPlaceholderConfigurer {
 
-	private ConservClient client;
+	private final ConservClient client;
+
+	private final ConservResource resource;
 
 	//Note: PropertiesLoaderSupport location field is private and there is not accessor to it - we must keep copy
 	private String[] paths;
 
 	public ConservPropertyPlaceholderConfigurer(ConservClient client) {
 		this.client = client;
+		this.resource = null;
+	}
+
+	public ConservPropertyPlaceholderConfigurer(ConservResource resource) {
+		this.resource = resource;
+		this.client = null;
 	}
 
 	@Override
 	public void setLocation(Resource location) {
+		if (resource != null) {
+			throw new IllegalStateException("Do not set Location when initialized with ConservResource");
+		}
 		super.setLocation(location);
 		this.paths = new String[] { convert(location) };
 	}
 
 	@Override
 	public void setLocations(Resource[] locations) {
+		if (resource != null) {
+			throw new IllegalStateException("Do not set Locations when initialized with ConservResource");
+		}
 		super.setLocations(locations);
 		if (locations != null) {
 			String[] paths = new String[locations.length];
@@ -51,7 +66,7 @@ public class ConservPropertyPlaceholderConfigurer extends PropertyPlaceholderCon
 
 	}
 
-	private String convert(Resource location) {
+	protected String convert(Resource location) {
 		String path;
 		if (client != null) {
 			if (location instanceof UrlResource) {
@@ -87,10 +102,18 @@ public class ConservPropertyPlaceholderConfigurer extends PropertyPlaceholderCon
 
 	@Override
 	protected void loadProperties(Properties props) throws IOException {
-		if (this.paths != null) {
+		if (resource != null) {
+			Config config = resource.get();
+			convert(config, props);
+		} else if (this.paths != null) {
+
 			for (String location : this.paths) {
 				if (logger.isInfoEnabled()) {
-					logger.info("Loading properties from " + client.getServerUrl() + location);
+					String configUrl = client.getServerUrl().toString();
+					if (!configUrl.endsWith("/")) {
+						configUrl = configUrl + "/" + location;
+					}
+					logger.info("Loading properties from " + configUrl);
 				}
 				try {
 					String[] split = location.split("/");
@@ -98,12 +121,7 @@ public class ConservPropertyPlaceholderConfigurer extends PropertyPlaceholderCon
 					String appCode = split[1];
 					String resCode = split[2];
 					Config config = client.getConfig(envCode, appCode, resCode);
-					List<Property> properties = config.getProperties();
-					for (Property property : properties) {
-						//TODO unescape as in DefaultPropertiesPersister#doLoad()
-						props.put(property.getName(), property.getValue());
-					}
-
+					convert(config, props);
 				} catch (ConservException cx) {
 					throw cx;
 					/*
@@ -118,6 +136,14 @@ public class ConservPropertyPlaceholderConfigurer extends PropertyPlaceholderCon
 
 				}
 			}
+		}
+	}
+
+	protected void convert(Config config, Properties props) {
+		List<Property> properties = config.getProperties();
+		for (Property property : properties) {
+			//TODO unescape as in DefaultPropertiesPersister#doLoad()
+			props.put(property.getName(), property.getValue());
 		}
 	}
 }

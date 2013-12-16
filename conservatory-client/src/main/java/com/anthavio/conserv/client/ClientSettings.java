@@ -14,6 +14,16 @@ import org.slf4j.LoggerFactory;
  */
 public class ClientSettings {
 
+	public static final String SERVER_URL = "conserv.url";
+	public static final String USERNAME = "conserv.username";
+	public static final String PASSWORD = "conserv.password";
+	public static final String CONNECT_TIMEOUT = "conserv.connectTimeout";
+	public static final String READ_TIMEOUT = "conserv.readTimeout";
+	public static final String FOLLOW_REDIRECTS = "conserv.followRedirects";
+	public static final String CONFIG_MEMORY_CACHING = "conserv.configMemoryCaching";
+	public static final String CONFIG_FILE_CACHING = "conserv.configFileCaching";
+	public static final String CONFIG_FILE_DIRECTORY = "conserv.configFileDirectory";
+
 	private static final Logger logger = LoggerFactory.getLogger(ClientSettings.class);
 
 	private URL serverUrl;
@@ -42,17 +52,17 @@ public class ClientSettings {
 	private String configDirectory = System.getProperty("java.io.tmpdir");
 
 	public ClientSettings(Properties properties) {
-		this(properties.getProperty("conserv.url"));
-		this.username = properties.getProperty("conserv.username");
-		this.password = properties.getProperty("conserv.password");
+		this(properties.getProperty(SERVER_URL));
+		this.username = properties.getProperty(USERNAME);
+		this.password = properties.getProperty(PASSWORD);
 
-		this.connectTimeout = getOptInt(properties, "conserv.connectTimeout", connectTimeout);
-		this.readTimeout = getOptInt(properties, "conserv.readTimeout", connectTimeout);
-		this.followRedirects = getOptBoolean(properties, "conserv.followRedirects", followRedirects);
+		this.connectTimeout = getOptInt(properties, CONNECT_TIMEOUT, connectTimeout);
+		this.readTimeout = getOptInt(properties, READ_TIMEOUT, connectTimeout);
+		this.followRedirects = getOptBoolean(properties, FOLLOW_REDIRECTS, followRedirects);
 
-		this.configMemoryCaching = getOptBoolean(properties, "conserv.configMemoryCaching", configMemoryCaching);
-		this.configFileCaching = getOptBoolean(properties, "conserv.configFileCaching", configFileCaching);
-		this.configDirectory = properties.getProperty("conserv.configDirectory", configDirectory);
+		this.configMemoryCaching = getOptBoolean(properties, CONFIG_MEMORY_CACHING, configMemoryCaching);
+		this.configFileCaching = getOptBoolean(properties, CONFIG_FILE_CACHING, configFileCaching);
+		this.configDirectory = properties.getProperty(CONFIG_FILE_DIRECTORY, configDirectory);
 	}
 
 	private int getOptInt(Properties proprties, String name, int defval) {
@@ -82,7 +92,7 @@ public class ClientSettings {
 		try {
 			this.serverUrl = new URL(serverUrl);
 		} catch (MalformedURLException mux) {
-			throw new IllegalArgumentException("Malformed url " + serverUrl, mux);
+			throw new IllegalArgumentException("Malformed url: " + serverUrl, mux);
 		}
 	}
 

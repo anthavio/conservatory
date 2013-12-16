@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.anthavio.discovery.StandardFinders.ClasspathFinder;
-import com.anthavio.discovery.StandardFinders.EnvironmentFinder;
-import com.anthavio.discovery.StandardFinders.FilepathFinder;
-import com.anthavio.discovery.StandardFinders.SystemFinder;
+import com.anthavio.discovery.StandardFinders.EnvironmentValiableFinder;
+import com.anthavio.discovery.StandardFinders.FilesystemFinder;
+import com.anthavio.discovery.StandardFinders.SystemPropertiesFinder;
 
 /**
  * 
@@ -16,15 +19,21 @@ import com.anthavio.discovery.StandardFinders.SystemFinder;
  */
 public class DiscoveryBuilder {
 
+	static final Logger logger = LoggerFactory.getLogger(PropertiesFinder.class);
+
+	public static DiscoveryBuilder Builder() {
+		return new DiscoveryBuilder();
+	}
+
 	private List<PropertiesFinder> finders = new ArrayList<PropertiesFinder>();
 
 	public DiscoveryBuilder system(String propertyName) {
-		add(new SystemFinder(propertyName));
+		add(new SystemPropertiesFinder(propertyName));
 		return this;
 	}
 
 	public DiscoveryBuilder environment(String propertyName) {
-		add(new EnvironmentFinder(propertyName));
+		add(new EnvironmentValiableFinder(propertyName));
 		return this;
 	}
 
@@ -39,7 +48,7 @@ public class DiscoveryBuilder {
 	}
 
 	public DiscoveryBuilder filepath(String fileNameSystemProperty) {
-		add(new FilepathFinder(fileNameSystemProperty));
+		add(new FilesystemFinder(fileNameSystemProperty));
 		return this;
 	}
 
@@ -53,9 +62,14 @@ public class DiscoveryBuilder {
 
 	public Properties discover() {
 		for (PropertiesFinder discoverer : finders) {
-			Finding discovery = discoverer.find();
-			if (discovery != null) {
-				return discovery.properties;
+			Finding finding = discoverer.find();
+			if (finding != null) {
+				logger.info("Discovered " + discoverer);
+				return finding.properties;
+			} else {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Nothing in " + discoverer);
+				}
 			}
 		}
 		return null;
