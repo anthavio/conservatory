@@ -59,11 +59,14 @@ public class SpringTests {
 
 		//Properties properties =  System.getProperties();
 		Properties properties = new Properties();
-		properties.setProperty(ClientSettings.SERVER_URL, "http://localhost:" + server.getHttpPort() + "/conserv");
+		//properties.setProperty(ClientSettings.SERVER_URL, "http://localhost:" + server.getHttpPort() + "/conserv");
 		//properties.setProperty(ConservResource.CONFIG_PATH, "/test/example/properties/");
-		properties.setProperty(ConservResource.CONFIG_ENVIRONMENT, "test");
-		properties.setProperty(ConservResource.CONFIG_APPLICATION, "example");
-		properties.setProperty(ConservResource.CONFIG_RESOURCE, "properties");
+		//properties.setProperty(ConservResource.CONFIG_ENVIRONMENT, "test");
+		//properties.setProperty(ConservResource.CONFIG_APPLICATION, "example");
+		//properties.setProperty(ConservResource.CONFIG_RESOURCE, "properties");
+
+		properties.setProperty(ConservResource.CONFIG_URL, "http://localhost:" + server.getHttpPort()
+				+ "/conserv/test/example/properties");
 
 		File file = save(properties);
 		System.setProperty("conserv.file", file.toString());

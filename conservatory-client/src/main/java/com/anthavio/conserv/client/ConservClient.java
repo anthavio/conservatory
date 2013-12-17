@@ -17,7 +17,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +25,8 @@ import com.anthavio.conserv.client.ConfigParser.Format;
 import com.anthavio.conserv.client.ConservLoader.LoadResult;
 import com.anthavio.conserv.model.Config;
 import com.anthavio.conserv.model.Property;
-import com.anthavio.discovery.DiscoveryBuilder;
+import com.anthavio.discovery.Discovery;
+import com.anthavio.discovery.Discovery.Result;
 
 /**
  * 
@@ -42,19 +42,19 @@ public class ConservClient {
 	 * @throws ConservInitException when default configuration cannot be located  
 	 */
 	public static ConservClient Default() throws ConservInitException {
-		Properties properties = Discover();
-		ClientSettings settings = new ClientSettings(properties);
+		Result result = Discover();
+		ClientSettings settings = new ClientSettings(result.getProperties());
 		ConservClient client = new ConservClient(settings);
 		return client;
 	}
 
-	public static Properties Discover() {
-		Properties properties = DiscoveryBuilder.Builder().system("conserv.url").filepath("conserv.file")
-				.classpath("/conserv.properties").discover();
-		if (properties == null) {
-			throw new ConservInitException("Conserv client configuration not discovered");
+	public static Result Discover() {
+		Result finding = Discovery.Builder().system("conserv.url").filepath("conserv.file").classpath("conserv.properties")
+				.discover();
+		if (finding == null) {
+			throw new ConservInitException("Conserv client configuration properties not found");
 		}
-		return properties;
+		return finding;
 	}
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());

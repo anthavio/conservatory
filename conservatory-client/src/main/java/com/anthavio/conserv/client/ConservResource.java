@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.Properties;
 
 import com.anthavio.conserv.model.Config;
+import com.anthavio.discovery.Discovery.Result;
 
 /**
  * 
@@ -18,25 +19,75 @@ public class ConservResource {
 	 * @throws ConservInitException when default configuration cannot be located  
 	 */
 	public static ConservResource Default() throws ConservInitException {
-		Properties properties = ConservClient.Discover();
-		ClientSettings settings = new ClientSettings(properties);
-		ConservClient client = new ConservClient(settings);
-		ConservResource resource = new ConservResource(client, properties);
+		Result result = ConservClient.Discover();
+		Properties properties = result.getProperties();
+		/*
+		String configUrl = properties.getProperty(CONFIG_URL);
+		String serverUrl = properties.getProperty(ClientSettings.SERVER_URL);
+		if (configUrl != null) {
+			if (serverUrl != null) {
+				if (configUrl.indexOf(serverUrl) == -1) {
+					throw new ConservInitException("Clashing '" + CONFIG_URL + "' and '" + ClientSettings.SERVER_URL
+							+ "' values found in " + result.getSource());
+				}
+			} else {
+				String[] elements = parseConfigUrl(configUrl);
+				serverUrl = elements[0];
+				properties = new Properties(properties); //make properties copy and add SERVER_URL
+				properties.setProperty(ClientSettings.SERVER_URL, serverUrl);
+			}
+		} else {
+			if (serverUrl != null) {
+				//this is ok... if CONFIG_PATH or CONFIG_ENVIRONMENT ant others are defined 
+			} else {
+				throw new ConservInitException("Neither '" + CONFIG_URL + "' nor '" + ClientSettings.SERVER_URL
+						+ "' property found in " + result.getSource());
+			}
+		}
+		*/
+		ConservResource resource = new ConservResource(properties);
+
+		//TODO we can append result.getSource() to message to simplify navidation to properties source
 		return resource;
 	}
 
 	/**
-	 * String format - http://config.server.com:8080/conserv/{environment}/{application}/{resource}
+	 * (System) property name of the complete configuration url 
+	 * 
+	 * Expected value format: http://config.server.com:8080/conserv/{environment}/{application}/{resource}
+	 * 
+	 * Note: Effectively it sould be {conserv.url}/{conserv.config.path}
 	 */
 	public static final String CONFIG_URL = "conserv.config.url";
 
 	/**
-	 * String format - {environment}/{application}/{resource}
+	 * (System) property name of the Configuration coordinates in one piece
+	 * 
+	 * Expected value format: {environment}/{application}/{resource}
+	 * 
+	 * Note: It takes precedence before CONFIG_ENVIRONMENT, CONFIG_APPLICATION, CONFIG_RESOURCE when set
 	 */
 	public static final String CONFIG_PATH = "conserv.config.path";
 
+	/**
+	 * (System) property name of the Configuration environment coordinate
+	 * 
+	 * Expected value format: {environment}
+	 */
 	public static final String CONFIG_ENVIRONMENT = "conserv.config.environment";
+
+	/**
+	 * (System) property name of the Configuration application coordinate
+	 * 
+	 * Expected value format: {application}
+	 */
 	public static final String CONFIG_APPLICATION = "conserv.config.application";
+
+	/**
+	 * (System) property name of the Configuration resource coordinate
+	 * 
+	 * Expected value format: {resource}
+	 */
 	public static final String CONFIG_RESOURCE = "conserv.config.resource";
 
 	private final ConservClient client;
@@ -48,7 +99,7 @@ public class ConservResource {
 	private final String resource;
 
 	/**
-	 * Creates own ConfigClient instance
+	 * Creates own internal ConfigClient instance
 	 * 
 	 * @param configUrl - http://config.server.com:8080/conserv/{environment}/{application}/{resource}
 	 */
@@ -57,44 +108,34 @@ public class ConservResource {
 	}
 
 	/**
-	 * Creates own ConfigClient instance
+	 * Creates own internal ConfigClient instance
 	 * 
 	 * @param configUrl - http://config.server.com:8080/conserv/{environment}/{application}/{resource}
 	 */
 	public ConservResource(URL configUrl) {
-		String resourcePath = configUrl.getPath();
-		String[] coordinates = parseConfigPath(resourcePath);
+		//Remove config path from url and initialize ConservClient with it
+		String[] elements = parseConfigUrl(configUrl.toString());
+		String serverUrl = elements[0];
+		String[] coordinates = parseConfigPath(elements[1]);
 		environment = coordinates[0];
 		application = coordinates[1];
 		resource = coordinates[2];
-		/*
-		String[] parts = resourcePath.split("/");
-		if (parts.length >= 3) { //get last 3 elements from path
-			environment = parts[parts.length - 3];
-			application = parts[parts.length - 2];
-			resource = parts[parts.length - 1];
-		} else {
-			throw new ConservInitException("Missing configuration elements in url: " + configUrl);
-		}
-		*/
-		//Remove config path from url and initialize ConservClient with it
-		String serverUrl = configUrl.toString().substring(0,
-				resourcePath.indexOf("/" + environment + "/" + application + "/" + resource));
+
 		this.client = new ConservClient(serverUrl);
 	}
 
 	/**
-	 * Creates own ConfigClient instance
+	 * Creates own internal ConfigClient instance
 	 * 
 	 * @param serverUrl - http://config.server.com:8080/conserv
-	 * @param configPath {environment}/{application}/{resource}
+	 * @param configPath - {environment}/{application}/{resource}
 	 */
 	public ConservResource(String serverUrl, String configPath) {
 		this(new ConservClient(serverUrl), configPath);
 	}
 
 	/**
-	 * Creates own ConfigClient instance
+	 * Creates own internal ConfigClient instance
 	 * 
 	 * @param serverUrl - http://config.server.com:8080/conserv
 	 * @param environment
@@ -107,7 +148,7 @@ public class ConservResource {
 
 	/**
 	 * @param client - provided initialized ConservClient
-	 * @param resourcePath {environment}/{application}/resource
+	 * @param configPath - {environment}/{application}/{resource}
 	 */
 	public ConservResource(ConservClient client, String configPath) {
 		this(client, parseConfigPath(configPath));
@@ -139,45 +180,123 @@ public class ConservResource {
 		}
 	}
 
+	/**
+	 * @param properties used to build ConservClient and ConservResource
+	*/
 	public ConservResource(Properties properties) {
-		this(new ConservClient(new ClientSettings(properties)), properties);
-	}
+		String configUrl = properties.getProperty(CONFIG_URL);
+		String serverUrl = properties.getProperty(ClientSettings.SERVER_URL);
+		if (configUrl != null) {
 
-	public ConservResource(ConservClient client, Properties properties) {
-		if (client == null) {
-			throw new IllegalArgumentException("Null client");
+			if (serverUrl != null) {
+				if (configUrl.indexOf(serverUrl) == -1) {
+					throw new ConservInitException("Clashing values '" + ClientSettings.SERVER_URL + "' '" + serverUrl
+							+ "' with '" + CONFIG_URL + "' '" + configUrl + "' found");
+				}
+			} else {
+				String[] elements = parseConfigUrl(configUrl);
+				serverUrl = elements[0];
+				properties = new Properties(properties); //make properties copy and add SERVER_URL
+				properties.setProperty(ClientSettings.SERVER_URL, serverUrl);
+			}
+		} else { // configUrl == null
+
+			if (serverUrl == null) {
+				throw new ConservInitException("Neither '" + ClientSettings.SERVER_URL + "' nor '" + CONFIG_URL
+						+ "' property found");
+			}
 		}
-		this.client = client;
+		ClientSettings settings = new ClientSettings(properties);
+		this.client = new ConservClient(settings);
+
 		String configPath = properties.getProperty(CONFIG_PATH);
-		if (configPath != null) {
+		if (configUrl != null) {
+			String[] coordinates = parseConfigPath(parseURL(configUrl).getPath());
+			this.environment = coordinates[0];
+			this.application = coordinates[1];
+			this.resource = coordinates[2];
+		} else if (configPath != null) {
 			String[] coordinates = parseConfigPath(configPath);
 			this.environment = coordinates[0];
 			this.application = coordinates[1];
 			this.resource = coordinates[2];
 		} else {
-			this.environment = getRequired(properties, CONFIG_ENVIRONMENT);
-			this.application = getRequired(properties, CONFIG_APPLICATION);
-			this.resource = getRequired(properties, CONFIG_RESOURCE);
+			this.environment = ClientSettings.getRequired(properties, CONFIG_ENVIRONMENT);
+			this.application = ClientSettings.getRequired(properties, CONFIG_APPLICATION);
+			this.resource = ClientSettings.getRequired(properties, CONFIG_RESOURCE);
+		}
+	}
+
+	/**
+	 * @param client - provided initialized ConservClient
+	 * @param properties used to build ConservResource
+	 
+	public ConservResource(ConservClient client, Properties properties) {
+		if (client == null) {
+			throw new IllegalArgumentException("Null client");
+		}
+		this.client = client;
+		String configUrl = properties.getProperty(CONFIG_URL);
+		String configPath = properties.getProperty(CONFIG_PATH);
+		if (configUrl != null) {
+			String[] coordinates = parseConfigPath(parseURL(configUrl).getPath());
+			this.environment = coordinates[0];
+			this.application = coordinates[1];
+			this.resource = coordinates[2];
+		} else if (configPath != null) {
+			String[] coordinates = parseConfigPath(configPath);
+			this.environment = coordinates[0];
+			this.application = coordinates[1];
+			this.resource = coordinates[2];
+		} else {
+			this.environment = ClientSettings.getRequired(properties, CONFIG_ENVIRONMENT);
+			this.application = ClientSettings.getRequired(properties, CONFIG_APPLICATION);
+			this.resource = ClientSettings.getRequired(properties, CONFIG_RESOURCE);
 		}
 
 	}
-
+	*/
+	/**
+	 * @return internally used ConservClient
+	 */
 	public ConservClient getClient() {
 		return client;
 	}
 
+	/**
+	 * @return Config loaded by ConservClient from Conserver server
+	 */
 	public Config get() {
 		return this.client.getConfig(environment, application, resource);
 	}
 
-	private static URL parseURL(String string) {
+	/**
+	 * Justy because exception can't be properly catched in constructor...
+	 */
+	public static URL parseURL(String string) {
 		try {
 			return new URL(string);
 		} catch (MalformedURLException mux) {
-			throw new IllegalArgumentException("Invalid url " + string, mux);
+			throw new ConservInitException("Malformed url: '" + string + "'", mux);
 		}
 	}
 
+	/**
+	 * @return [0] - serverUrl, [1] - configPath
+	 */
+	public static String[] parseConfigUrl(String strUrl) {
+		URL configUrl = parseURL(strUrl);
+		String path = configUrl.getPath();
+		String[] coordinates = parseConfigPath(path);
+		String configPath = coordinates[0] + "/" + coordinates[1] + "/" + coordinates[2];
+		//String strUrl = configUrl.toString();
+		String serverUrl = strUrl.substring(0, strUrl.indexOf(configPath) - 1);
+		return new String[] { serverUrl, configPath };
+	}
+
+	/**
+	 * @return [0] - environment, [1] - application, [2] - resource
+	 */
 	public static String[] parseConfigPath(String path) {
 		int sidx = 0;
 		int eidx = path.length() - 1;
@@ -191,8 +310,8 @@ public class ConservResource {
 			path = path.substring(sidx, eidx);
 		}
 		String[] parts = path.split("/");
-		if (parts.length < 3) { //get last 3 elements from path
-			throw new ConservInitException("Missing configuration elements in " + path);
+		if (parts.length < 3) { //get last 3 segments
+			throw new ConservInitException("Missing configuration elements in path '" + path + "'");
 		} else {
 			String[] retval = new String[3];
 			retval[0] = parts[parts.length - 3];
@@ -207,19 +326,9 @@ public class ConservResource {
 			if (retval[0].length() == 0) {
 				throw new ConservInitException("Resource coordinate is blank in " + path);
 			}
-			System.out.println(retval[0] + " " + retval[1] + " " + retval[2]);
+			//System.out.println(retval[0] + " " + retval[1] + " " + retval[2]);
 			return retval;
 		}
 	}
 
-	private static String getRequired(Properties properties, String name) {
-		String value = properties.getProperty(name);
-		if (value == null) {
-			throw new ConservInitException("Required property " + name + " not found");
-		} else if (value.length() == 0) {
-			throw new ConservInitException("Required property " + name + " is blank");
-		} else {
-			return value;
-		}
-	}
 }

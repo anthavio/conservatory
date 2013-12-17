@@ -9,9 +9,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import com.anthavio.discovery.DiscoveryBuilder.DiscoveryException;
-import com.anthavio.discovery.DiscoveryBuilder.Finding;
-import com.anthavio.discovery.DiscoveryBuilder.PropertiesFinder;
+import com.anthavio.discovery.Discovery.DiscoveryException;
+import com.anthavio.discovery.Discovery.PropertiesFinder;
+import com.anthavio.discovery.Discovery.Result;
 
 /**
  * 
@@ -32,10 +32,10 @@ public class StandardFinders {
 		}
 
 		@Override
-		public Finding find() {
+		public Result find() {
 			String property = System.getProperty(propertyName);
 			if (property != null) {
-				return new Finding("[System Properties]", System.getProperties());
+				return new Result("[System Properties]", System.getProperties());
 			} else {
 				return null;
 			}
@@ -60,7 +60,7 @@ public class StandardFinders {
 		}
 
 		@Override
-		public Finding find() {
+		public Result find() {
 			String property = System.getenv(variableName);
 			if (property != null) {
 				Map<String, String> envars = System.getenv();
@@ -68,7 +68,7 @@ public class StandardFinders {
 				for (Entry<String, String> entry : envars.entrySet()) {
 					properties.put(entry.getKey(), entry.getValue());
 				}
-				return new Finding("[Environment Variables]", System.getProperties());
+				return new Result("[Environment Variables]", System.getProperties());
 			} else {
 				return null;
 			}
@@ -94,7 +94,7 @@ public class StandardFinders {
 		}
 
 		@Override
-		public Finding find() {
+		public Result find() {
 			String fileName = System.getProperty(fileNameSystemProperty);
 			if (fileName != null) {
 				file = new File(fileName);
@@ -112,7 +112,7 @@ public class StandardFinders {
 				} catch (IOException iox) {
 					throw new DiscoveryException("Properties load failed from file " + file, iox);
 				}
-				return new Finding(file, properties);
+				return new Result(file, properties);
 			} else {
 				return null;
 			}
@@ -120,7 +120,7 @@ public class StandardFinders {
 
 		@Override
 		public String toString() {
-			return getClass().getSimpleName() + " " + fileNameSystemProperty + "  " + file;
+			return getClass().getSimpleName() + " " + fileNameSystemProperty + " " + file;
 		}
 
 	}
@@ -157,7 +157,7 @@ public class StandardFinders {
 		}
 
 		@Override
-		public Finding find() {
+		public Result find() {
 			url = classLoader.getResource(resource);
 			if (url != null) {
 				Properties properties;
@@ -166,7 +166,7 @@ public class StandardFinders {
 				} catch (IOException iox) {
 					throw new DiscoveryException("Properties load failed from classpath resource " + url, iox);
 				}
-				return new Finding(url, properties);
+				return new Result(url, properties);
 			} else {
 				return null;
 			}
@@ -192,13 +192,13 @@ public class StandardFinders {
 		}
 
 		@Override
-		public Finding find() {
+		public Result find() {
 			String urlString = System.getProperty(urlSystemProperty);
 			if (urlString != null) {
 				try {
 					url = new URL(urlString);
 					Properties properties = load(url.openStream());
-					return new Finding(url, properties);
+					return new Result(url, properties);
 				} catch (IOException iox) {
 					throw new DiscoveryException("Properties load failed from url" + urlString, iox);
 				}

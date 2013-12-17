@@ -17,42 +17,44 @@ import com.anthavio.discovery.StandardFinders.SystemPropertiesFinder;
  * @author martin.vanek
  *
  */
-public class DiscoveryBuilder {
+public class Discovery {
 
 	static final Logger logger = LoggerFactory.getLogger(PropertiesFinder.class);
 
-	public static DiscoveryBuilder Builder() {
-		return new DiscoveryBuilder();
+	public static Discovery Builder() {
+		return new Discovery();
 	}
+
+	private boolean merge = false;
 
 	private List<PropertiesFinder> finders = new ArrayList<PropertiesFinder>();
 
-	public DiscoveryBuilder system(String propertyName) {
+	public Discovery system(String propertyName) {
 		add(new SystemPropertiesFinder(propertyName));
 		return this;
 	}
 
-	public DiscoveryBuilder environment(String propertyName) {
+	public Discovery environment(String propertyName) {
 		add(new EnvironmentValiableFinder(propertyName));
 		return this;
 	}
 
-	public DiscoveryBuilder classpath(String resource) {
+	public Discovery classpath(String resource) {
 		add(new ClasspathFinder(resource, null));
 		return this;
 	}
 
-	public DiscoveryBuilder classpath(String resource, Class<?> caller) {
+	public Discovery classpath(String resource, Class<?> caller) {
 		add(new ClasspathFinder(resource, caller));
 		return this;
 	}
 
-	public DiscoveryBuilder filepath(String fileNameSystemProperty) {
+	public Discovery filepath(String fileNameSystemProperty) {
 		add(new FilesystemFinder(fileNameSystemProperty));
 		return this;
 	}
 
-	public DiscoveryBuilder add(PropertiesFinder finder) {
+	public Discovery add(PropertiesFinder finder) {
 		if (finder == null) {
 			throw new IllegalArgumentException("Null finder");
 		}
@@ -60,15 +62,16 @@ public class DiscoveryBuilder {
 		return this;
 	}
 
-	public Properties discover() {
-		for (PropertiesFinder discoverer : finders) {
-			Finding finding = discoverer.find();
+	public Result discover() {
+		for (PropertiesFinder finder : finders) {
+			Result finding = finder.find();
 			if (finding != null) {
-				logger.info("Discovered " + discoverer);
-				return finding.properties;
+				logger.info("Located with " + finder);
+				//TODO merge properties... 
+				return finding;
 			} else {
 				if (logger.isDebugEnabled()) {
-					logger.debug("Nothing in " + discoverer);
+					logger.debug("Nothing with " + finder);
 				}
 			}
 		}
@@ -76,9 +79,9 @@ public class DiscoveryBuilder {
 	}
 
 	public <T> T build(Assembler<T> assembler) {
-		Properties properties = discover();
-		if (properties != null) {
-			return assembler.assemble(properties);
+		Result finding = discover();
+		if (finding != null) {
+			return assembler.assemble(finding.properties);
 		}
 		return null;
 	}
@@ -105,13 +108,13 @@ public class DiscoveryBuilder {
 		}
 	}
 
-	public static class Finding {
+	public static class Result {
 
 		private final Object source;
 
 		private final Properties properties;
 
-		public Finding(Object source, Properties properties) {
+		public Result(Object source, Properties properties) {
 			if (source == null) {
 				throw new IllegalArgumentException("null source");
 			}
@@ -133,6 +136,6 @@ public class DiscoveryBuilder {
 
 	public static interface PropertiesFinder {
 
-		public Finding find();
+		public Result find();
 	}
 }

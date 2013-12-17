@@ -14,6 +14,9 @@ import org.slf4j.LoggerFactory;
  */
 public class ClientSettings {
 
+	/**
+	 * Property value names
+	 */
 	public static final String SERVER_URL = "conserv.url";
 	public static final String USERNAME = "conserv.username";
 	public static final String PASSWORD = "conserv.password";
@@ -26,7 +29,7 @@ public class ClientSettings {
 
 	private static final Logger logger = LoggerFactory.getLogger(ClientSettings.class);
 
-	private URL serverUrl;
+	private final URL serverUrl;
 
 	private String username; //BASIC authentication credentials 
 
@@ -51,8 +54,24 @@ public class ClientSettings {
 	//where to keep configuration files
 	private String configDirectory = System.getProperty("java.io.tmpdir");
 
+	/**
+	 * Initialization from configuration properties
+	 */
 	public ClientSettings(Properties properties) {
-		this(properties.getProperty(SERVER_URL));
+		String serverUrl = properties.getProperty(SERVER_URL);
+		if (serverUrl != null) {
+			this.serverUrl = ConservResource.parseURL(serverUrl);
+		} else {
+			String configUrl = properties.getProperty(ConservResource.CONFIG_URL);
+			if (configUrl != null) {
+				String[] elements = ConservResource.parseConfigUrl(configUrl);
+				this.serverUrl = ConservResource.parseURL(elements[0]);
+			} else {
+				throw new ConservInitException("Neither '" + SERVER_URL + "' nor '" + ConservResource.CONFIG_URL
+						+ "' property found");
+			}
+		}
+
 		this.username = properties.getProperty(USERNAME);
 		this.password = properties.getProperty(PASSWORD);
 
@@ -63,29 +82,6 @@ public class ClientSettings {
 		this.configMemoryCaching = getOptBoolean(properties, CONFIG_MEMORY_CACHING, configMemoryCaching);
 		this.configFileCaching = getOptBoolean(properties, CONFIG_FILE_CACHING, configFileCaching);
 		this.configDirectory = properties.getProperty(CONFIG_FILE_DIRECTORY, configDirectory);
-	}
-
-	private int getOptInt(Properties proprties, String name, int defval) {
-		String string = proprties.getProperty(name);
-		if (string != null && string.length() != 0) {
-			try {
-				return Integer.parseInt(string);
-			} catch (Exception x) {
-				logger.warn("Invalid value for int '" + string + "' Keepind default value:" + defval);
-				return defval;
-			}
-		} else {
-			return defval;
-		}
-	}
-
-	private boolean getOptBoolean(Properties proprties, String name, boolean defval) {
-		String string = proprties.getProperty(name);
-		if (string != null && string.length() != 0) {
-			return Boolean.parseBoolean(string);
-		} else {
-			return defval;
-		}
 	}
 
 	public ClientSettings(String serverUrl) {
@@ -105,10 +101,6 @@ public class ClientSettings {
 
 	public URL getServerUrl() {
 		return serverUrl;
-	}
-
-	public void setServerUrl(URL serverUrl) {
-		this.serverUrl = serverUrl;
 	}
 
 	public void setCredentials(String username, String password) {
@@ -194,6 +186,40 @@ public class ClientSettings {
 
 	public void setConservLoader(ConservLoader conservLoader) {
 		this.conservLoader = conservLoader;
+	}
+
+	public static String getRequired(Properties properties, String name) {
+		String value = properties.getProperty(name);
+		if (value == null) {
+			throw new ConservInitException("Required property " + name + " not found");
+		} else if (value.length() == 0) {
+			throw new ConservInitException("Required property " + name + " is blank");
+		} else {
+			return value;
+		}
+	}
+
+	public static int getOptInt(Properties properties, String name, int defval) {
+		String string = properties.getProperty(name);
+		if (string != null && string.length() != 0) {
+			try {
+				return Integer.parseInt(string);
+			} catch (Exception x) {
+				logger.warn("Invalid value for int '" + string + "' Keepind default value:" + defval);
+				return defval;
+			}
+		} else {
+			return defval;
+		}
+	}
+
+	public static boolean getOptBoolean(Properties proprties, String name, boolean defval) {
+		String string = proprties.getProperty(name);
+		if (string != null && string.length() != 0) {
+			return Boolean.parseBoolean(string);
+		} else {
+			return defval;
+		}
 	}
 
 	@Override
