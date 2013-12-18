@@ -19,7 +19,7 @@ import com.anthavio.conserv.model.Property;
  * @author martin.vanek
  *
  */
-public class JavaPropsParser implements ConfigParser {
+public class JavaPropertiesParser implements ConfigParser {
 
 	@Override
 	public Format getFormat() {

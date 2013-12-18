@@ -41,8 +41,8 @@ public class ConservClient {
 	 * Default Properties Discovery
 	 */
 	public static Result<?> DefaultDiscovery() {
-		Result<?> finding = PropertiesDiscovery.Builder().system("conserv.url").filepath("conserv.file")
-				.classpath("conserv.properties").discover();
+		Result<?> finding = PropertiesDiscovery.Builder().system("conserv.url").filesystem("conserv.file")
+				.classpath("conserv.properties").serviceLoader().discover();
 		if (finding == null) {
 			throw new ConservInitException("Conserv client configuration properties not found");
 		}

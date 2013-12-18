@@ -5,12 +5,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.ServiceLoader;
 
 import com.anthavio.discovery.PropertiesDiscovery.DiscoveryException;
-import com.anthavio.discovery.PropertiesDiscovery.PropertiesFinder;
 import com.anthavio.discovery.PropertiesDiscovery.Result;
 
 /**
@@ -210,6 +211,37 @@ public class StandardFinders {
 		@Override
 		public String toString() {
 			return getClass().getSimpleName() + " " + urlSystemProperty + " " + url;
+		}
+	}
+
+	/**
+	 * Makes java.util.ServiceLoader lookup to find PropertiesFinder interface implementation to load Properties
+	 * 
+	 * - Create class implementing com.anthavio.discovery.PropertiesFinder (example com.myapp.MyGreatPropertiesFinderImpl)
+	 * - Create file 
+	 * 		META-INF/services/com.anthavio.discovery.PropertiesFinder
+	 *   Having single line
+	 *   	com.myapp.MyGreatPropertiesFinderImpl
+	 */
+	public static class ServiceLoaderFinder implements PropertiesFinder {
+
+		private transient PropertiesFinder finder;
+
+		@Override
+		public Result find() {
+			ServiceLoader<PropertiesFinder> loader = ServiceLoader.load(PropertiesFinder.class);
+			Iterator<PropertiesFinder> iterator = loader.iterator();
+			if (iterator.hasNext()) {
+				this.finder = iterator.next();
+				return finder.find();
+			}
+
+			return null;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + " " + finder;
 		}
 	}
 

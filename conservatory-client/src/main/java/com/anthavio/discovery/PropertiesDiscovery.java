@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.anthavio.discovery.StandardFinders.ClasspathFinder;
 import com.anthavio.discovery.StandardFinders.EnvironmentValiableFinder;
 import com.anthavio.discovery.StandardFinders.FilesystemFinder;
+import com.anthavio.discovery.StandardFinders.ServiceLoaderFinder;
 import com.anthavio.discovery.StandardFinders.SystemPropertiesFinder;
 
 /**
@@ -51,8 +52,13 @@ public class PropertiesDiscovery {
 		return this;
 	}
 
-	public PropertiesDiscovery filepath(String fileNameSystemProperty) {
+	public PropertiesDiscovery filesystem(String fileNameSystemProperty) {
 		add(new FilesystemFinder(fileNameSystemProperty));
+		return this;
+	}
+
+	public PropertiesDiscovery serviceLoader() {
+		add(new ServiceLoaderFinder());
 		return this;
 	}
 
@@ -142,11 +148,6 @@ public class PropertiesDiscovery {
 		public Properties getProperties() {
 			return properties;
 		}
-	}
-
-	public static interface PropertiesFinder<T> {
-
-		public Result<T> find();
 	}
 
 }
