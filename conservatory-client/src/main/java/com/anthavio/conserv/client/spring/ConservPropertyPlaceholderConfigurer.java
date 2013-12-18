@@ -105,8 +105,8 @@ public class ConservPropertyPlaceholderConfigurer extends PropertyPlaceholderCon
 		if (resource != null) {
 			Config config = resource.get();
 			convert(config, props);
-		} else if (this.paths != null) {
 
+		} else if (this.paths != null) {
 			for (String location : this.paths) {
 				if (logger.isInfoEnabled()) {
 					String configUrl = client.getServerUrl().toString();

@@ -25,8 +25,8 @@ import com.anthavio.conserv.client.ConfigParser.Format;
 import com.anthavio.conserv.client.ConservLoader.LoadResult;
 import com.anthavio.conserv.model.Config;
 import com.anthavio.conserv.model.Property;
-import com.anthavio.discovery.Discovery;
-import com.anthavio.discovery.Discovery.Result;
+import com.anthavio.discovery.PropertiesDiscovery;
+import com.anthavio.discovery.PropertiesDiscovery.Result;
 
 /**
  * 
@@ -38,23 +38,26 @@ import com.anthavio.discovery.Discovery.Result;
 public class ConservClient {
 
 	/**
-	 * @return ConservResource discovered with default location techniques and parameters
-	 * @throws ConservInitException when default configuration cannot be located  
+	 * Default Properties Discovery
 	 */
-	public static ConservClient Default() throws ConservInitException {
-		Result result = Discover();
-		ClientSettings settings = new ClientSettings(result.getProperties());
-		ConservClient client = new ConservClient(settings);
-		return client;
-	}
-
-	public static Result Discover() {
-		Result finding = Discovery.Builder().system("conserv.url").filepath("conserv.file").classpath("conserv.properties")
-				.discover();
+	public static Result<?> DefaultDiscovery() {
+		Result<?> finding = PropertiesDiscovery.Builder().system("conserv.url").filepath("conserv.file")
+				.classpath("conserv.properties").discover();
 		if (finding == null) {
 			throw new ConservInitException("Conserv client configuration properties not found");
 		}
 		return finding;
+	}
+
+	/**
+	 * @return ConservResource discovered with default location techniques and parameters
+	 * @throws ConservInitException when default configuration cannot be located  
+	 */
+	public static ConservClient Default() throws ConservInitException {
+		Result<?> result = DefaultDiscovery();
+		ClientSettings settings = new ClientSettings(result.getProperties());
+		ConservClient client = new ConservClient(settings);
+		return client;
 	}
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());

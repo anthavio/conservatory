@@ -5,7 +5,8 @@ import java.net.URL;
 import java.util.Properties;
 
 import com.anthavio.conserv.model.Config;
-import com.anthavio.discovery.Discovery.Result;
+import com.anthavio.discovery.PropertiesDiscovery;
+import com.anthavio.discovery.PropertiesDiscovery.Result;
 
 /**
  * 
@@ -15,36 +16,12 @@ import com.anthavio.discovery.Discovery.Result;
 public class ConservResource {
 
 	/**
-	 * @return ConservResource discovered with default location techniques and parameters
+	 * @return ConservResource found with default discovery machanism 
 	 * @throws ConservInitException when default configuration cannot be located  
 	 */
 	public static ConservResource Default() throws ConservInitException {
-		Result result = ConservClient.Discover();
+		Result<?> result = ConservClient.DefaultDiscovery();
 		Properties properties = result.getProperties();
-		/*
-		String configUrl = properties.getProperty(CONFIG_URL);
-		String serverUrl = properties.getProperty(ClientSettings.SERVER_URL);
-		if (configUrl != null) {
-			if (serverUrl != null) {
-				if (configUrl.indexOf(serverUrl) == -1) {
-					throw new ConservInitException("Clashing '" + CONFIG_URL + "' and '" + ClientSettings.SERVER_URL
-							+ "' values found in " + result.getSource());
-				}
-			} else {
-				String[] elements = parseConfigUrl(configUrl);
-				serverUrl = elements[0];
-				properties = new Properties(properties); //make properties copy and add SERVER_URL
-				properties.setProperty(ClientSettings.SERVER_URL, serverUrl);
-			}
-		} else {
-			if (serverUrl != null) {
-				//this is ok... if CONFIG_PATH or CONFIG_ENVIRONMENT ant others are defined 
-			} else {
-				throw new ConservInitException("Neither '" + CONFIG_URL + "' nor '" + ClientSettings.SERVER_URL
-						+ "' property found in " + result.getSource());
-			}
-		}
-		*/
 		ConservResource resource = new ConservResource(properties);
 
 		//TODO we can append result.getSource() to message to simplify navidation to properties source
@@ -181,9 +158,19 @@ public class ConservResource {
 	}
 
 	/**
+	 * Create instance using custom PropertiesDiscovery
+	 */
+	public ConservResource(PropertiesDiscovery discovery) {
+		this(discovery.discover(true).getProperties());
+	}
+
+	/**
 	 * @param properties used to build ConservClient and ConservResource
 	*/
 	public ConservResource(Properties properties) {
+		if (properties == null) {
+			throw new IllegalArgumentException("Null properties");
+		}
 		String configUrl = properties.getProperty(CONFIG_URL);
 		String serverUrl = properties.getProperty(ClientSettings.SERVER_URL);
 		if (configUrl != null) {
@@ -284,13 +271,13 @@ public class ConservResource {
 	/**
 	 * @return [0] - serverUrl, [1] - configPath
 	 */
-	public static String[] parseConfigUrl(String strUrl) {
-		URL configUrl = parseURL(strUrl);
+	public static String[] parseConfigUrl(String strConfigUrl) {
+		URL configUrl = parseURL(strConfigUrl);
 		String path = configUrl.getPath();
 		String[] coordinates = parseConfigPath(path);
 		String configPath = coordinates[0] + "/" + coordinates[1] + "/" + coordinates[2];
-		//String strUrl = configUrl.toString();
-		String serverUrl = strUrl.substring(0, strUrl.indexOf(configPath) - 1);
+		String serverUrl = strConfigUrl.substring(0, strConfigUrl.indexOf(configPath) - 1);
+		//System.out.println(serverUrl + " " + configPath);
 		return new String[] { serverUrl, configPath };
 	}
 
@@ -299,7 +286,7 @@ public class ConservResource {
 	 */
 	public static String[] parseConfigPath(String path) {
 		int sidx = 0;
-		int eidx = path.length() - 1;
+		int eidx = path.length();
 		if (path.startsWith("/")) {
 			sidx = 1;
 		}
@@ -319,16 +306,22 @@ public class ConservResource {
 				throw new ConservInitException("Environment coordinate is blank in " + path);
 			}
 			retval[1] = parts[parts.length - 2];
-			if (retval[0].length() == 0) {
+			if (retval[1].length() == 0) {
 				throw new ConservInitException("Application coordinate is blank in " + path);
 			}
 			retval[2] = parts[parts.length - 1];
-			if (retval[0].length() == 0) {
+			if (retval[2].length() == 0) {
 				throw new ConservInitException("Resource coordinate is blank in " + path);
 			}
 			//System.out.println(retval[0] + " " + retval[1] + " " + retval[2]);
 			return retval;
 		}
+	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + " " + client.getServerUrl() + " " + environment + "/" + application + "/"
+				+ resource;
 	}
 
 }

@@ -9,9 +9,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import com.anthavio.discovery.Discovery.DiscoveryException;
-import com.anthavio.discovery.Discovery.PropertiesFinder;
-import com.anthavio.discovery.Discovery.Result;
+import com.anthavio.discovery.PropertiesDiscovery.DiscoveryException;
+import com.anthavio.discovery.PropertiesDiscovery.PropertiesFinder;
+import com.anthavio.discovery.PropertiesDiscovery.Result;
 
 /**
  * 
@@ -20,7 +20,7 @@ import com.anthavio.discovery.Discovery.Result;
  */
 public class StandardFinders {
 
-	public static class SystemPropertiesFinder implements PropertiesFinder {
+	public static class SystemPropertiesFinder implements PropertiesFinder<String> {
 
 		private final String propertyName;
 
@@ -32,10 +32,10 @@ public class StandardFinders {
 		}
 
 		@Override
-		public Result find() {
+		public Result<String> find() {
 			String property = System.getProperty(propertyName);
 			if (property != null) {
-				return new Result("[System Properties]", System.getProperties());
+				return new Result<String>("[System Properties]", System.getProperties());
 			} else {
 				return null;
 			}
@@ -48,7 +48,7 @@ public class StandardFinders {
 
 	}
 
-	public static class EnvironmentValiableFinder implements PropertiesFinder {
+	public static class EnvironmentValiableFinder implements PropertiesFinder<String> {
 
 		private final String variableName;
 
@@ -60,7 +60,7 @@ public class StandardFinders {
 		}
 
 		@Override
-		public Result find() {
+		public Result<String> find() {
 			String property = System.getenv(variableName);
 			if (property != null) {
 				Map<String, String> envars = System.getenv();
@@ -68,7 +68,7 @@ public class StandardFinders {
 				for (Entry<String, String> entry : envars.entrySet()) {
 					properties.put(entry.getKey(), entry.getValue());
 				}
-				return new Result("[Environment Variables]", System.getProperties());
+				return new Result<String>("[Environment Variables]", System.getProperties());
 			} else {
 				return null;
 			}
@@ -80,7 +80,7 @@ public class StandardFinders {
 		}
 	}
 
-	public static class FilesystemFinder implements PropertiesFinder {
+	public static class FilesystemFinder implements PropertiesFinder<File> {
 
 		private final String fileNameSystemProperty;
 
@@ -94,7 +94,7 @@ public class StandardFinders {
 		}
 
 		@Override
-		public Result find() {
+		public Result<File> find() {
 			String fileName = System.getProperty(fileNameSystemProperty);
 			if (fileName != null) {
 				file = new File(fileName);
@@ -112,7 +112,7 @@ public class StandardFinders {
 				} catch (IOException iox) {
 					throw new DiscoveryException("Properties load failed from file " + file, iox);
 				}
-				return new Result(file, properties);
+				return new Result<File>(file, properties);
 			} else {
 				return null;
 			}
@@ -125,7 +125,7 @@ public class StandardFinders {
 
 	}
 
-	public static class ClasspathFinder implements PropertiesFinder {
+	public static class ClasspathFinder implements PropertiesFinder<URL> {
 
 		private final ClassLoader classLoader;
 
@@ -157,7 +157,7 @@ public class StandardFinders {
 		}
 
 		@Override
-		public Result find() {
+		public Result<URL> find() {
 			url = classLoader.getResource(resource);
 			if (url != null) {
 				Properties properties;
@@ -166,7 +166,7 @@ public class StandardFinders {
 				} catch (IOException iox) {
 					throw new DiscoveryException("Properties load failed from classpath resource " + url, iox);
 				}
-				return new Result(url, properties);
+				return new Result<URL>(url, properties);
 			} else {
 				return null;
 			}
@@ -178,7 +178,7 @@ public class StandardFinders {
 		}
 	}
 
-	public static class UrlFinder implements PropertiesFinder {
+	public static class UrlFinder implements PropertiesFinder<URL> {
 
 		private final String urlSystemProperty;
 
@@ -192,13 +192,13 @@ public class StandardFinders {
 		}
 
 		@Override
-		public Result find() {
+		public Result<URL> find() {
 			String urlString = System.getProperty(urlSystemProperty);
 			if (urlString != null) {
 				try {
 					url = new URL(urlString);
 					Properties properties = load(url.openStream());
-					return new Result(url, properties);
+					return new Result<URL>(url, properties);
 				} catch (IOException iox) {
 					throw new DiscoveryException("Properties load failed from url" + urlString, iox);
 				}

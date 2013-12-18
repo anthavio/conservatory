@@ -2,6 +2,8 @@ package com.anthavio.conserv.client.spring;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.EnumerablePropertySource;
 
 import com.anthavio.conserv.client.ConservResource;
@@ -21,6 +23,8 @@ import com.anthavio.conserv.model.Property;
  */
 public class ConservPropertiesSource extends EnumerablePropertySource<ConservResource> {
 
+	private static final Logger logger = LoggerFactory.getLogger(ConservPropertiesSource.class);
+
 	private ConservResource resource;
 
 	private transient Config config; //cache
@@ -34,8 +38,11 @@ public class ConservPropertiesSource extends EnumerablePropertySource<ConservRes
 		this.resource = resource;
 	}
 
-	private Config getConfig() {
+	private Config getConfig(String name) {
 		if (config == null) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Lazy loading config on '" + name + "' property request");
+			}
 			config = resource.get();
 		}
 		return config;
@@ -43,21 +50,34 @@ public class ConservPropertiesSource extends EnumerablePropertySource<ConservRes
 
 	@Override
 	public Object getProperty(String name) {
-		Property property = getConfig().getProperty(name);
+		Property property = getConfig(name).getProperty(name);
 		if (property != null) {
-			return property.getValue();
+			String value = property.getValue();
+			if (logger.isTraceEnabled()) {
+				logger.trace("Property '" + name + "' value '" + value + "'");
+			}
+			return value;
 		} else {
+			if (logger.isTraceEnabled()) {
+				logger.trace("Property '" + name + "' not found");
+			}
 			return null;
 		}
+
 	}
 
 	@Override
 	public String[] getPropertyNames() {
-		List<Property> properties = getConfig().getProperties();
+		List<Property> properties = getConfig("ConservPropertiesSource.getPropertyNames()").getProperties();
 		String[] names = new String[properties.size()];
 		for (int i = 0; i < properties.size(); ++i) {
 			names[i] = properties.get(i).getName();
 		}
 		return names;
+	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + " " + resource;
 	}
 }

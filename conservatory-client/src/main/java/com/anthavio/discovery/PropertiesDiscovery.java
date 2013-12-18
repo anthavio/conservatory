@@ -17,49 +17,56 @@ import com.anthavio.discovery.StandardFinders.SystemPropertiesFinder;
  * @author martin.vanek
  *
  */
-public class Discovery {
+public class PropertiesDiscovery {
 
 	static final Logger logger = LoggerFactory.getLogger(PropertiesFinder.class);
 
-	public static Discovery Builder() {
-		return new Discovery();
+	public static PropertiesDiscovery Builder() {
+		return new PropertiesDiscovery();
 	}
+
+	private boolean exceptionOnNotFound = false;
 
 	private boolean merge = false;
 
 	private List<PropertiesFinder> finders = new ArrayList<PropertiesFinder>();
 
-	public Discovery system(String propertyName) {
+	public PropertiesDiscovery system(String propertyName) {
 		add(new SystemPropertiesFinder(propertyName));
 		return this;
 	}
 
-	public Discovery environment(String propertyName) {
+	public PropertiesDiscovery environment(String propertyName) {
 		add(new EnvironmentValiableFinder(propertyName));
 		return this;
 	}
 
-	public Discovery classpath(String resource) {
+	public PropertiesDiscovery classpath(String resource) {
 		add(new ClasspathFinder(resource, null));
 		return this;
 	}
 
-	public Discovery classpath(String resource, Class<?> caller) {
+	public PropertiesDiscovery classpath(String resource, Class<?> caller) {
 		add(new ClasspathFinder(resource, caller));
 		return this;
 	}
 
-	public Discovery filepath(String fileNameSystemProperty) {
+	public PropertiesDiscovery filepath(String fileNameSystemProperty) {
 		add(new FilesystemFinder(fileNameSystemProperty));
 		return this;
 	}
 
-	public Discovery add(PropertiesFinder finder) {
+	public PropertiesDiscovery add(PropertiesFinder finder) {
 		if (finder == null) {
 			throw new IllegalArgumentException("Null finder");
 		}
 		finders.add(finder);
 		return this;
+	}
+
+	public Result discover(boolean exception) {
+		this.exceptionOnNotFound = exception;
+		return discover();
 	}
 
 	public Result discover() {
@@ -75,11 +82,14 @@ public class Discovery {
 				}
 			}
 		}
+		if (exceptionOnNotFound) {
+			throw new DiscoveryException("Properties not discovered using: " + finders);
+		}
 		return null;
 	}
 
 	public <T> T build(Assembler<T> assembler) {
-		Result finding = discover();
+		Result<T> finding = discover();
 		if (finding != null) {
 			return assembler.assemble(finding.properties);
 		}
@@ -108,13 +118,13 @@ public class Discovery {
 		}
 	}
 
-	public static class Result {
+	public static class Result<T> {
 
-		private final Object source;
+		private final T source;
 
 		private final Properties properties;
 
-		public Result(Object source, Properties properties) {
+		public Result(T source, Properties properties) {
 			if (source == null) {
 				throw new IllegalArgumentException("null source");
 			}
@@ -125,7 +135,7 @@ public class Discovery {
 			this.properties = properties;
 		}
 
-		public Object getSource() {
+		public T getSource() {
 			return source;
 		}
 
@@ -134,8 +144,9 @@ public class Discovery {
 		}
 	}
 
-	public static interface PropertiesFinder {
+	public static interface PropertiesFinder<T> {
 
-		public Result find();
+		public Result<T> find();
 	}
+
 }
