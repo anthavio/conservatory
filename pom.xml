@@ -183,6 +183,13 @@
 		</dependency>
 		
 		<dependency>
+			<groupId>net.anthavio.maven</groupId>
+			<artifactId>jetty-deps-core</artifactId>
+			<version>${jetty.version}</version>
+			<type>pom</type>
+		</dependency>
+		
+		<dependency>
 			<groupId>org.testng</groupId>
 			<artifactId>testng</artifactId>
 			<version>6.8.5</version>

@@ -216,19 +216,14 @@
 			<groupId>net.anthavio</groupId>
 			<artifactId>anthavio-jetty</artifactId>
 		</dependency>
-		
-		<dependency>
-			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>jetty-servlet</artifactId>
-		</dependency>
-<!--		
+			
 		<dependency>
 			<groupId>net.anthavio.maven</groupId>
 			<artifactId>jetty-deps-core</artifactId>
 			<type>pom</type>
 			<scope>provided</scope>
 		</dependency>
--->
+
 <!--
 		<dependency>
 			<groupId>org.thymeleaf.extras</groupId>
