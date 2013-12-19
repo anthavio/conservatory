@@ -20,7 +20,7 @@
 
 	<context-param>
 		<param-name>contextConfigLocation</param-name>
-		<param-value>com.anthavio.conserv.web.WebappSpringConfig</param-value>
+		<param-value>net.anthavio.conserv.web.WebappSpringConfig</param-value>
 	</context-param>
 	
 	<listener>
@@ -53,7 +53,7 @@
 		</init-param>
 		<init-param>
 			<param-name>contextConfigLocation</param-name>
-			<param-value>com.anthavio.conserv.web.api.MvcSpringConfig</param-value>
+			<param-value>net.anthavio.conserv.web.api.MvcSpringConfig</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
 	</servlet>

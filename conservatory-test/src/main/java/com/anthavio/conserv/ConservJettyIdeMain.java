@@ -1,8 +1,8 @@
 package com.anthavio.conserv;
 
-import org.slf4j.bridge.SLF4JBridgeHandler;
+import net.anthavio.jetty.JettyWrapper;
 
-import com.anthavio.jetty.JettyWrapper;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 /**
  * 

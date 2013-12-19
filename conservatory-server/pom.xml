@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   
   <parent>
-		<groupId>com.anthavio.conservatory</groupId>
+		<groupId>net.anthavio.conservatory</groupId>
 		<artifactId>conservatory</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
   </parent>
@@ -25,7 +25,7 @@
   <dependencies>
 		
 		<dependency>
-			<groupId>com.anthavio.conservatory</groupId>
+			<groupId>net.anthavio.conservatory</groupId>
 			<artifactId>conservatory-client</artifactId>
 		</dependency>
 		
@@ -40,12 +40,12 @@
 		</dependency>
 	
 		<dependency>
-			<groupId>com.anthavio</groupId>
+			<groupId>net.anthavio</groupId>
 			<artifactId>anthavio-spring</artifactId>
 		</dependency>
 		
 		<dependency>
-			<groupId>com.anthavio</groupId>
+			<groupId>net.anthavio</groupId>
 			<artifactId>anthavio-aspects</artifactId>
 		</dependency>
 		
@@ -213,17 +213,22 @@
 		<!-- provided - we don't want them in war -->
 		
 		<dependency>
-			<groupId>com.anthavio</groupId>
+			<groupId>net.anthavio</groupId>
 			<artifactId>anthavio-jetty</artifactId>
 		</dependency>
 		
 		<dependency>
-			<groupId>com.anthavio.maven</groupId>
-			<artifactId>jetty-deps-all</artifactId>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-servlet</artifactId>
+		</dependency>
+<!--		
+		<dependency>
+			<groupId>net.anthavio.maven</groupId>
+			<artifactId>jetty-deps-core</artifactId>
 			<type>pom</type>
 			<scope>provided</scope>
 		</dependency>
-
+-->
 <!--
 		<dependency>
 			<groupId>org.thymeleaf.extras</groupId>
@@ -269,7 +274,6 @@
 			<plugin>
 				<groupId>com.mysema.maven</groupId>
 				<artifactId>apt-maven-plugin</artifactId>
-				<version>1.1.1</version>
 				<executions>
 					<execution>
 						<phase>generate-sources</phase>
@@ -305,7 +309,7 @@
 					-->
 					<aspectLibraries>
 						<aspectLibrary>
-							<groupId>com.anthavio</groupId>
+							<groupId>net.anthavio</groupId>
 							<artifactId>anthavio-aspects</artifactId>
 						</aspectLibrary>
 						<aspectLibrary>

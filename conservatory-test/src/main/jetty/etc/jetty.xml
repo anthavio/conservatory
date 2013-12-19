@@ -116,7 +116,7 @@
           </Call>
     </Ref>
     -->
-    <New class="com.anthavio.jetty.JettyWebAppDeployer">
+    <New class="net.anthavio.jetty.JettyWebAppDeployer">
 			<Arg><Ref id="Contexts"/></Arg>
 			<Set name="contextPath">/conserv</Set>
 			<Set name="baseResource">
