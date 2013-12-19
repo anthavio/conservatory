@@ -250,9 +250,9 @@ public class ServicesSpringConfig {
 
 		/*
 		//http://musingsofaprogrammingaddict.blogspot.co.uk/2010/01/jpa-2-and-bean-validation-in-action.html
-		jpaProperties.setProperty("javax.persistence.validation.group.pre-persist", "com.anthavio.conserv.dbmodel.PrePresistChecks");
-		jpaProperties.setProperty("javax.persistence.validation.group.pre-update", "com.anthavio.conserv.dbmodel.PreUpdateChecks");
-		jpaProperties.setProperty("javax.persistence.validation.group.pre-remove", "com.anthavio.conserv.dbmodel.PreDeleteChecks");
+		jpaProperties.setProperty("javax.persistence.validation.group.pre-persist", "net.anthavio.conserv.dbmodel.PrePresistChecks");
+		jpaProperties.setProperty("javax.persistence.validation.group.pre-update", "net.anthavio.conserv.dbmodel.PreUpdateChecks");
+		jpaProperties.setProperty("javax.persistence.validation.group.pre-remove", "net.anthavio.conserv.dbmodel.PreDeleteChecks");
 		 */
 
 		//http://mprabhat.wordpress.com/2012/09/30/full-text-search-with-hibernate-search-4-1-lucene-and-jpa/

@@ -1,4 +1,4 @@
-package com.anthavio.conserv;
+package net.anthavio.conserv;
 
 import net.anthavio.jetty.JettyWrapper;
 

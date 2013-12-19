@@ -14,7 +14,6 @@ import java.util.ServiceLoader;
 import net.anthavio.discovery.PropertiesDiscovery.DiscoveryException;
 import net.anthavio.discovery.PropertiesDiscovery.Result;
 
-
 /**
  * 
  * @author martin.vanek
@@ -218,9 +217,9 @@ public class StandardFinders {
 	/**
 	 * Makes java.util.ServiceLoader lookup to find PropertiesFinder interface implementation to load Properties
 	 * 
-	 * - Create class implementing com.anthavio.discovery.PropertiesFinder (example com.myapp.MyGreatPropertiesFinderImpl)
+	 * - Create class implementing net.anthavio.discovery.PropertiesFinder (example com.myapp.MyGreatPropertiesFinderImpl)
 	 * - Create file 
-	 * 		META-INF/services/com.anthavio.discovery.PropertiesFinder
+	 * 		META-INF/services/net.anthavio.discovery.PropertiesFinder
 	 *   Having single line
 	 *   	com.myapp.MyGreatPropertiesFinderImpl
 	 */

@@ -1,4 +1,4 @@
-package com.anthavio.conserv;
+package net.anthavio.conserv;
 
 import java.util.List;
 
