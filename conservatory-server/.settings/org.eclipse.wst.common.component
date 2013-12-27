@@ -19,9 +19,6 @@
         <dependent-module archiveName="anthavio-aspects-1.0.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/anthavio-aspects/anthavio-aspects">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="spring-vaadin-integration-2.0.2.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/spring-vaadin-integration/spring-vaadin-integration">
-            <dependency-type>uses</dependency-type>
-        </dependent-module>
         <dependent-module archiveName="anthavio-jetty-1.0.0-SNAPSHOT.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/anthavio-jetty/anthavio-jetty">
             <dependency-type>uses</dependency-type>
         </dependent-module>
