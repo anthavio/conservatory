@@ -29,7 +29,7 @@
 			<groupId>net.anthavio</groupId>
 			<artifactId>anthavio-jetty</artifactId>
 		</dependency>
-		
+	 
 		<dependency>
 			<groupId>net.anthavio.maven</groupId>
 			<artifactId>jetty-essentials</artifactId>
