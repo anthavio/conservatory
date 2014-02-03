@@ -213,8 +213,8 @@ public class ServicesSpringConfig {
 
 	@Bean(initMethod = "start", destroyMethod = "stop")
 	public Server h2Server() {
-		String tcpPort = "9002";
-		String baseDir = "./work/h2db";
+		String tcpPort = environment.getProperty("h2.tcpPort", "9002");
+		String baseDir = environment.getProperty("h2.baseDir", "./work/h2db");
 		String args = "-tcp,-tcpAllowOthers,-tcpDaemon,-tcpPort," + tcpPort + ",-baseDir," + baseDir;
 		TcpServer service = new TcpServer();
 		Server server;
