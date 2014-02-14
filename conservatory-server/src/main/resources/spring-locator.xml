@@ -4,10 +4,10 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
 	<bean id="conserv-services" class="org.springframework.context.annotation.AnnotationConfigApplicationContext" lazy-init="true">
-		<constructor-arg>
-			<list>
+		<constructor-arg name="annotatedClasses">
+			<array>
 				<value>net.anthavio.conserv.services.ServicesSpringConfig</value>
-			</list>
+			</array>
 		</constructor-arg>
 	</bean>
 

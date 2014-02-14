@@ -1,6 +1,6 @@
 package net.anthavio.conserv;
 
-import net.anthavio.jetty.JettyWrapper;
+import net.anthavio.sewer.jetty.JettyWrapper;
 
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
